@@ -375,7 +375,7 @@
 
            "CreateFiles": {
             "files" : {
-              "/root/bsd-package.deb": {
+              "/root/sd-package.deb": {
                 "source": { "Fn::FindInMap": [ "SDLink", { "Ref": "SDVers" }, "URL" ] },
                 "mode": "000644",
                 "owner": "root"
@@ -403,21 +403,10 @@
           "RunCommands" : {
             "commands" : {
 
-              "01-dev_mode_accept" : {
-                "command" : "echo \"developer_mode_accepted     yes\" >> /opt/zeus/zxtm/global.cfg"
+              "01-sd-deploy" : {
+                "command" : "/root/sd-deploy.sh"
               },
 
-              "02-enable_rest_api" : {
-                "command" : "echo \"rest!enabled     Yes\" >> /opt/zeus/zxtm/conf/settings.cfg"
-              },
-
-              "03-enable_autofailover_1" : {
-                "command" : "sed -i -e \"/flipper.autofailback/d\" /opt/zeus/zxtm/conf/settings.cfg"
-              },
-
-              "04-enable_autofailover_2" : {
-                "command" : "echo \"flipper!autofailback     Yes\" >> /opt/zeus/zxtm/conf/settings.cfg"
-              },
               "99-wait_3_mins_then_signal_that_we_are_done" : {
                 "command" : { "Fn::Join" : ["", [
                   "sleep 180 && /usr/local/bin/cfn-signal -s true '",
