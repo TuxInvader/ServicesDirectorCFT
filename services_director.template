@@ -380,6 +380,11 @@
                 "mode": "000644",
                 "owner": "root"
               },
+              "/root/sd-deploy.sh": {
+                "source": "https://github.com/TuxInvader/ServicesDirectorCFT/blob/master/sd-deploy.sh?raw=true",
+                "mode": "000755",
+                "owner": "root"
+              },
               "/root/.sd-config.sh": {
                 "content": { "Fn::Join": [ "", [
                   "#!/bin/bash\n",
