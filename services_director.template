@@ -62,7 +62,6 @@
       "Type" : "String",
       "Default" : "17.2",
       "AllowedValues" : [
-        "17.1",
         "17.2"
       ],
       "ConstraintDescription" : "Must be a valid SD version"
@@ -196,8 +195,7 @@
     },
 
     "SDLink" : {
-        "17.1" : { "URL" : "http://www.badpenguin.co.uk/vadc/brocade-services-director_17.1_amd64.deb" },
-        "17.2" : { "URL" : "http://www.badpenguin.co.uk/vadc/brocade-services-director_17.2_amd64.deb" }
+        "17.2" : { "URL" : "https://github.com/TuxInvader/ServicesDirectorCFT/blob/master/brocade-services-director_17.2_amd64.deb?raw=true" }
     }
 
   },
