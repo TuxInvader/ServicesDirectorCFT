@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -xe
 
 # Default Params
 db_host=localhost
@@ -30,11 +30,11 @@ mkdir -p $sources
 mkdir -p $logs
 
 # Check we have certificates
-if [ -f "$certfile" or -n "$cert" ]
+if [ -f "$certfile" -o -n "$cert" ]
 then
-    if [ -n $cert ]
+    if [ -n "$cert" ]
     then
-        echo $cert > $certfile
+        echo -e "$cert" > $certfile
     fi
 else
     echo "ERROR - No Certificate found in config or on disk" >&2
@@ -42,11 +42,11 @@ else
 fi
 
 # Check we have keys
-if [ -f "$keyfile" or -n "$key" ]
+if [ -f "$keyfile" -o -n "$key" ]
 then
-    if [ -n $key ]
+    if [ -n "$key" ]
     then
-        echo $key > $certfile
+        echo -e "$key" > $certfile
     fi
 else
     echo "ERROR - No Private Key found in config or on disk" >&2
@@ -75,4 +75,5 @@ cat <<-EOF | debconf-set-selections
     riverbed_ssc ssc/alerts/smtp_port string 25
 EOF
 
+DEBIAN_FRONTEND=noninteractive dpkg -i /root/sd-package.deb
 
