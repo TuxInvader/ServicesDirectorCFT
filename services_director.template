@@ -389,13 +389,14 @@
               "/root/.sd-config.sh": {
                 "content": { "Fn::Join": [ "", [
                   "#!/bin/bash\n",
-                  "db_host='", { "Ref": "DBHost" }, "'\n", 
-                  "db_user='", { "Ref": "DBUser" }, "'\n", 
-                  "db_pass='", { "Ref": "DBPass" }, "'\n", 
-                  "db_name='", { "Ref": "DBName" }, "'\n", 
-                  "rest_user='", { "Ref": "RestUser" }, "'\n", 
-                  "rest_pass='", { "Ref": "RestPass" }, "'\n", 
-                  "alert_email='", { "Ref": "AlertEmail" }, "'\n", 
+                  "db_host='", { "Ref": "DBHost" }, "'\n",
+                  "db_user='", { "Ref": "DBUser" }, "'\n",
+                  "db_pass='", { "Ref": "DBPass" }, "'\n",
+                  "db_name='", { "Ref": "DBName" }, "'\n",
+                  "sd_vers='", { "Ref": "SDVers" }, "'\n",
+                  "rest_user='", { "Ref": "RestUser" }, "'\n",
+                  "rest_pass='", { "Ref": "RestPass" }, "'\n",
+                  "alert_email='", { "Ref": "AlertEmail" }, "'\n",
                   "licenses='", { "Fn::Join": [ ",", {"Ref": "Licenses"} ]}, "'\n",
                   "cert='", { "Fn::Join": [ "\\n", { "Ref": "SSLPublicKey" }]}, "'\n",
                   "key='", { "Fn::Join": [ "\\n", { "Ref": "SSLPrivateKey" }]}, "'\n"

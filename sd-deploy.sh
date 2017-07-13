@@ -87,10 +87,13 @@ EOF
 
 DEBIAN_FRONTEND=noninteractive dpkg -i /root/sd-package.deb
 
-# Install SD Licenses
-add_licenses "$sd_vers" "$license"
+# * Add your Services Controller license file(s)
+add_licenses "$sd_vers" "$licenses"
 
-# Setup database
+# * Set up your database:
+#/opt/riverbed_ssc_17.2/bin/configure_ssc --liveconfigonly
 
-# Start ssc
-#service ssc start
+# * Start the daemon:
+#start ssc
+
+
