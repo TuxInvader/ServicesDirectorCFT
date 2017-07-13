@@ -46,7 +46,7 @@ if [ -f "$keyfile" -o -n "$key" ]
 then
     if [ -n "$key" ]
     then
-        echo -e "$key" > $certfile
+        echo -e "$key" > $keyfile
     fi
 else
     echo "ERROR - No Private Key found in config or on disk" >&2
