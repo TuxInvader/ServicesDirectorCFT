@@ -171,6 +171,7 @@
     "AlertEmail": {
       "Description": "An email address for alerts",
       "Type": "String"
+      "Default": "root@localhost"
     }
 
   },
