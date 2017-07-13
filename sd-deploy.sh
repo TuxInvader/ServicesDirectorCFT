@@ -54,26 +54,26 @@ else
 fi
 
 cat <<-EOF | debconf-set-selections
-    riverbed_ssc ssc/db/host string $db_host
-    riverbed_ssc ssc/db/port string $db_port
-    riverbed_ssc ssc/db/name string $db_name
-    riverbed_ssc ssc/db/user string $db_user
-    riverbed_ssc ssc/db/password password $db_pass
-    riverbed_ssc ssc/server/name string $bsd_host
-    riverbed_ssc ssc/server/port string $bsd_port
-    riverbed_ssc ssc/server/license_port string $bsd_license_port
-    riverbed_ssc ssc/server/cert_file string $certfile
-    riverbed_ssc ssc/server/key_file string $keyfile
-    riverbed_ssc ssc/server/numthreads string 20
-    riverbed_ssc ssc/server/actionthreads string 5
-    riverbed_ssc ssc/server/monitorthreads string 20
-    riverbed_ssc ssc/server/meteringthreads string 20
-    riverbed_ssc ssc/files/sources string $sources
-    riverbed_ssc ssc/files/logs string $logs
-    riverbed_ssc ssc/alerts/address string $alert_email
-    riverbed_ssc ssc/alerts/smtp_host string $alert_server
-    riverbed_ssc ssc/alerts/smtp_port string 25
+    riverbed-ssc ssc/db/host string $db_host
+    riverbed-ssc ssc/db/port string $db_port
+    riverbed-ssc ssc/db/name string $db_name
+    riverbed-ssc ssc/db/user string $db_user
+    riverbed-ssc ssc/db/password password $db_pass
+    riverbed-ssc ssc/server/name string $bsd_host
+    riverbed-ssc ssc/server/port string $bsd_port
+    riverbed-ssc ssc/server/license_port string $bsd_license_port
+    riverbed-ssc ssc/server/cert_file string $certfile
+    riverbed-ssc ssc/server/key_file string $keyfile
+    riverbed-ssc ssc/server/numthreads string 20
+    riverbed-ssc ssc/server/actionthreads string 5
+    riverbed-ssc ssc/server/monitorthreads string 20
+    riverbed-ssc ssc/server/meteringthreads string 20
+    riverbed-ssc ssc/files/sources string $sources
+    riverbed-ssc ssc/files/logs string $logs
+    riverbed-ssc ssc/alerts/address string $alert_email
+    riverbed-ssc ssc/alerts/smtp_host string $alert_server
+    riverbed-ssc ssc/alerts/smtp_port string 25
 EOF
 
-DEBIAN_FRONTEND=noninteractive dpkg -i /root/sd-package.deb
+#DEBIAN_FRONTEND=noninteractive dpkg -i /root/sd-package.deb
 
