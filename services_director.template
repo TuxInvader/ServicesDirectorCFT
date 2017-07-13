@@ -1,0 +1,549 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description": "Deploy a Brocade Services Director into EC2. **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used when you deploy from this template.",
+  "Metadata" : {
+    "AWS::CloudFormation::Interface" : {
+      "ParameterGroups" : [
+        {
+          "Label" : { "default" : "VPC Configuration" },
+          "Parameters" : [ "AZ", "VPCCIDR", "PublicSubnetCIDR" ]
+        },
+        {
+          "Label" : { "default" : "Host Configuration" },
+          "Parameters" : [ "InstanceType", "KeyName" ]
+        },
+        {
+          "Label" : { "default" : "Services Director Configuration" },
+          "Parameters" : [ "SDVers", "RestUser", "RestPass", "SSLPublicKey", "SSLPrivateKey", "DBHost", "DBUser", "DBPass", "DBName", "Licenses", "AlertEmail" ]
+        },
+        {
+          "Label" : { "default" : "Security Configuration" },
+          "Parameters" : [ "RemoteAccessCIDR" ]
+        }
+      ],
+      "ParameterLabels" : {
+        "AZ" : { "default" : "Select Availability Zone:" },
+        "VPCCIDR" : { "default" : "New VPC CIDR Block:" },
+        "PublicSubnetCIDR" : { "default" : "Public Subnet:" },
+        "InstanceType" : { "default" : "SD instance type:" },
+        "KeyName" : { "default" : "SSH Key Name:" },
+        "SDVers" : { "default" : "Services Director Version:" },
+        "RestUser" : { "default" : "SD REST Username:" },
+        "RestPass" : { "default" : "SD REST Password:" },
+        "SSLPublicKey" : { "default" : "SSL Public Key:" },
+        "SSLPrivateKey" : { "default" : "SSL Private Key:" },
+        "DBHost" : { "default" : "Mysql DB Host:" },
+        "DBUser" : { "default" : "Mysql DB User:" },
+        "DBPass" : { "default" : "Mysql DB Pass:" },
+        "DBName" : { "default" : "Mysql DB Database name:" },
+        "Licenses" : { "default" : "CSV list of your license keys:" },
+        "AlertEmail" : { "default" : "Email address for alerts:" },
+        "RemoteAccessCIDR" : { "default" : "Remote Access CIDR:" }
+      }
+    }
+  },
+
+  "Parameters": {
+    "InstanceType": {
+      "Description": "Please select an EC2 instance type",
+      "Type": "String",
+      "Default": "t2.small",
+      "AllowedValues": [
+        "t2.small",
+        "t2.medium",
+        "t2.large"
+      ],
+      "ConstraintDescription": "Must be an allowed EC2 instance type."
+    },
+
+    "SDVers" : {
+      "Description" : "Please select SD version:",
+      "Type" : "String",
+      "Default" : "17.2",
+      "AllowedValues" : [
+        "17.1",
+        "17.2"
+      ],
+      "ConstraintDescription" : "Must be a valid SD version"
+    },
+
+    "KeyName": {
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "",
+      "AllowedPattern" : "[-_ a-zA-Z0-9]*",
+      "Description": "Name of an existing EC2 KeyPair. Your SD host will launch with this KeyPair.",
+      "ConstraintDescription": "Must be the name of an existing EC2 KeyPair."
+    },
+
+    "RestUser": {
+      "Description" : "The SD REST User. Must be 4 to 15 characters",
+      "Type"        : "String",
+      "MinLength"   : "4",
+      "MaxLength"   : "15",
+      "Default"     : "admin"
+    },
+
+    "RestPass": {
+      "Description" : "Password for the SD REST user. Must be 6 to 32 characters containing letters, numbers and symbols",
+      "Type"        : "String",
+      "MinLength"   : "6",
+      "MaxLength"   : "32",
+      "AllowedPattern" : "(?=^.{6,255}$)((?=.*\\d)(?=.*[A-Z])(?=.*[a-z])|(?=.*\\d)(?=.*[^A-Za-z0-9])(?=.*[a-z])|(?=.*[^A-Za-z0-9])(?=.*[A-Z])(?=.*[a-z])|(?=.*\\d)(?=.*[A-Z])(?=.*[^A-Za-z0-9]))^.*",
+      "NoEcho"         : "true",
+      "Default"        : "Password123"
+    },
+
+    "RemoteAccessCIDR": {
+      "Description": "Allowed source IP address range for SSH access into BSD",
+      "Type": "String",
+      "MinLength": "9",
+      "MaxLength": "18",
+      "Default": "0.0.0.0/0",
+      "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/([0-9]|[1-2][0-9]|3[0-2]))$",
+      "ConstraintDescription": "Must be a valid CIDR range of the form x.x.x.x/x."
+    },
+
+    "VPCCIDR": {
+      "Description": "This is the IP block for your new VPC. Typically it is a /16 from the private IP range.",
+      "Type": "String",
+      "Default": "10.8.0.0/16",
+      "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/([0-9]|[1-2][0-9]|3[0-2]))$",
+      "ConstraintDescription": "Must be a valid CIDR range of the form x.x.x.x/x."
+    },
+
+    "AZ": {
+      "Description": "List of Availability Zones for deployment.",
+      "Type": "AWS::EC2::AvailabilityZone::Name",
+      "ConstraintDescription": "Please select an AZ from a drop-down list."
+    },
+
+    "PublicSubnetCIDR": {
+      "Description": "The SD will have one interface in this public subnet.",
+      "Type": "String",
+      "Default": "10.8.1.0/24",
+      "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/([0-9]|[1-2][0-9]|3[0-2]))$",
+      "ConstraintDescription": "Must be a valid CIDR range of the form x.x.x.x/x."
+    },
+
+    "SSLPublicKey": {
+      "Type": "CommaDelimitedList",
+      "Default": "-----BEGIN CERTIFICATE-----,MIIDfzCCAmegAwIBAgIJAKmWzoyTLpc9MA0GCSqGSIb3DQEBCwUAMFYxCzAJBgNV,BAYTAkdCMRIwEAYDVQQIDAlDYW1icmlkZ2UxEjAQBgNVBAcMCUNhbWJyaWRnZTEQ,MA4GA1UECgwHQnJvY2FkZTENMAsGA1UEAwwEYnNkMTAeFw0xNzA3MTExNTAyMzJa,Fw0yNzA3MDkxNTAyMzJaMFYxCzAJBgNVBAYTAkdCMRIwEAYDVQQIDAlDYW1icmlk,Z2UxEjAQBgNVBAcMCUNhbWJyaWRnZTEQMA4GA1UECgwHQnJvY2FkZTENMAsGA1UE,AwwEYnNkMTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKO3jH7V6WSe,h1Uvj1YExRrlNJ8dmkP9jdSjznZFg+qtjjNOngrk5PPIOHsqWuwJ9VGnqk/C/zNb,HszgIezpSFOjjS7Vttr9hDIHP9kPDzJkCjzkL32CjRbWSw0ECjR7+ObCM/rcnJFE,NS9478EA6CBhiun2BZsRc1bbs5Kpy9YPloOPfUCdUeDlYiDwFqDgVysX0ca6zq6/,yU5xvRsfTmthiVOIXPDwRvtR3nHyHWdM9OKtMXzn8psiSY54YxDFXd1fA+H/Bmge,0nOLcj34ojVJaEs6U3cpTjKMvFn1FjtuZU6BXeOGplB3wcBwW9bIexGB/eBQhFlC,QirM4019qQMCAwEAAaNQME4wHQYDVR0OBBYEFECm0DEoGwXMFwLDl1+Ujbo1fvct,MB8GA1UdIwQYMBaAFECm0DEoGwXMFwLDl1+Ujbo1fvctMAwGA1UdEwQFMAMBAf8w,DQYJKoZIhvcNAQELBQADggEBAGr8fEPxPaRTZiEIAJzT2CCFZzKVl+/7+PdEU8J0,NP3vYQToA0/OeikTqyQRayromHjHRz9+flaum/7g7KrJhifQ87w7NiS7fLV4kOiA,ESp0I0351Btd6LywYCPf21Dv8kRrwFaOgtzi/VhkuxyjlczqaS7/KAstcEZB/OJo,9cvFiTshmj2h3ANyzimHibkMd5K4j27YpmBMDwvYCCIiztBruVNSVZ+pIUTfiXgc,HIK7K3osOYsoDbOMiALA7TkQC/e2z+sktTXp94zfSeXkUj0hRuN8kHLfFMvoHJce,hyRAt4eKXsGV4jEaWSOfKDsWwmF5YGnK4Mu0r/CpUZoSehA=,-----END CERTIFICATE-----",
+      "Description": "Change your public SSL key newlines to commas."
+    },
+
+    "SSLPrivateKey": {
+      "Type": "CommaDelimitedList",
+      "NoEcho": "true",
+      "Default": "-----BEGIN PRIVATE KEY-----,MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCjt4x+1elknodV,L49WBMUa5TSfHZpD/Y3Uo852RYPqrY4zTp4K5OTzyDh7KlrsCfVRp6pPwv8zWx7M,4CHs6UhTo40u1bba/YQyBz/ZDw8yZAo85C99go0W1ksNBAo0e/jmwjP63JyRRDUv,eO/BAOggYYrp9gWbEXNW27OSqcvWD5aDj31AnVHg5WIg8Bag4FcrF9HGus6uv8lO,cb0bH05rYYlTiFzw8Eb7Ud5x8h1nTPTirTF85/KbIkmOeGMQxV3dXwPh/wZoHtJz,i3I9+KI1SWhLOlN3KU4yjLxZ9RY7bmVOgV3jhqZQd8HAcFvWyHsRgf3gUIRZQkIq,zONNfakDAgMBAAECggEBAIdYownohn7soC1ImFMgtmK5wnsY2gQDhlGY6oLUjW5h,9QFtqTKQcMcpa6hHJ8ujn+/VkPNH3frzBc+SK/nUEjszJvDlNbptg/BoFdy4mnOq,SNx2ONymJUYP+xPTlyw0oV0EiDyITde6b83DSVJiEYVTnqg1AAVms9fG4foJ7b4U,6nKEnPAwtoWnDV8gEovI/qm9XI3CDS/txiDSLEInOmPFKrcleLIr53NyguQ8T0pF,pGSwOqHjbDCMMSWAEefpOJywOruTlER9EpriuEcSuXGMJl9uwFTGRDJhYtnzu2cv,msf2x6hEcrihQPrC9CDKO6YF+dD1SAR37sL7AuphkEECgYEAzrFhEeA9IM6Nj0MQ,zSuSbV9ENO+Roydw8PJnbm6ZzH3QvZTIT3dpEtcuy9GF66F2cJgI9r/qACRDDgC6,KLnfSuoLhhsLm9tigJfUmYhp9gJk4FhKRgEke58msLrR+m8hc10yZhjG/nf4JnqX,PvZTHv7Vu6vHgP4hvNVz2FfvNEsCgYEAysWns/yAI4JbD2lxDfFigK46qc9cmhCo,r5R+NzevMsLCYKzjjCmxHbqXIFqcJVfkeKNfuGTjuRpkhqxMbxu1Sm6H8QLaUVsU,PyXCDuMN4sfV9aV2IUoQbCw3W06Xmf+LBa0cKqgCkPi97laOVLVfz8b9YMWAj2pS,pa0mD4bDOykCgYA/oO1gAmbvBYcgliXC82nlT5GAtktgLZEgK49ZuKSSBh1Pb1Dm,3byz9xhJ2FtguVjrunHv/A5+MquN0P198hJiToBzrTm6piPBsHvbM9piyEPjqGpc,+JcRk2Hmv+xKKxHiIMuWEISZ67axqcWLtWrLPOnxFyWYeSNLrW43KILT1wKBgBbB,pfeKH+tcRtHs+HYjH/XnF8hU8ESOGBBUbvHNewkMWHo3DPZ++1Slyy4jXSDHw2lS,lHyCPhhZAO0oSw+xIWBwFSuUMWIuAZCwsR2wl69a1AVUg3Rq9nrdX30MzfDHgBer,/NxArMEOWWp1JlYVYOJVp7wDjlEKEqprSzk025Y5AoGBAKGkSaAgeqkkpC3Sk2en,qYQeQAzSxDvHMwDHlgWgpdD6sa7QpDXgdYHay+DXiNEPoDqmKENoGWAqK6lcjGW0,87UgE2pMcS0LRuPuHLckD0puFCiPO4zunVmkB2tM9G7zyEvDKNoSVLbTz3F/E7t2,fKGXyMnVs0UJO043x9G3xZbL,-----END PRIVATE KEY-----",
+      "Description": "Change your private SSL key newlines to commas."
+    },
+
+    "DBHost": {
+      "Description": "This is the Mysql DB Host. If you set it to 'localhost' then mysql will be installed locally.",
+      "Type": "String",
+      "Default": "localhost"
+    },
+
+    "DBUser": {
+      "Description": "This is the Mysql DB Username.",
+      "Type": "String",
+      "Default": "ssc"
+    },
+
+    "DBPass": {
+      "Description": "This is the Mysql DB Password.",
+      "Type": "String",
+      "NoEcho": "true",
+      "Default": "Password123"
+    },
+
+    "DBName": {
+      "Description": "This is the Mysql DB Database Name.",
+      "Type": "String",
+      "Default": "ssc"
+    },
+
+    "Licenses": {
+      "Description": "A CSV list containing your SD License, and any bandwidth packs or add-ons.",
+      "Type": "CommaDelimitedList"
+    },
+
+    "AlertEmail": {
+      "Description": "An email address for alerts",
+      "Type": "String"
+    }
+
+  },
+
+  "Mappings" : {
+
+    "UbuntuAMI" : {
+      "ap-south-1" : { "AMI" : "ami-19f78076" },
+      "eu-west-2" : { "AMI" : "ami-45eae021" },
+      "eu-west-1" : { "AMI" : "ami-17fda671" },
+      "ap-northeast-2" : { "AMI" : "ami-7669be18" },
+      "ap-northeast-1" : { "AMI" : "ami-16b0f671" },
+      "sa-east-1" : { "AMI" : "ami-10abcf7c" },
+      "ca-central-1" : { "AMI" : "ami-70299b14" },
+      "ap-southeast-1" : { "AMI" : "ami-bda410de" },
+      "ap-southeast-2" : { "AMI" : "ami-c83335ab" },
+      "eu-central-1" : { "AMI" : "ami-d93cf5b6" },
+      "us-east-1" : { "AMI" : "ami-af22d9b9" },
+      "us-east-2" : { "AMI" : "ami-41d48e24" },
+      "us-west-1" : { "AMI" : "ami-5ca3fe3c" },
+      "us-west-2" : { "AMI" : "ami-4c0bb02c" }
+    },
+
+    "SDLink" : {
+        "17.1" : { "URL" : "http://www.badpenguin.co.uk/vadc/brocade-services-director_17.1_amd64.deb" },
+        "17.2" : { "URL" : "http://www.badpenguin.co.uk/vadc/brocade-services-director_17.2_amd64.deb" }
+    }
+
+  },
+
+  "Conditions" : {
+    "US-East-1": { "Fn::Equals" : [{ "Ref" : "AWS::Region" }, "us-east-1"] }
+  },
+
+  "Resources": {
+
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": {
+          "Ref": "VPCCIDR"
+        },
+        "EnableDnsHostnames": "true",
+        "EnableDnsSupport": "true",
+        "Tags": [
+          {  "Key": "Application",
+            "Value": "SD Quick Start"
+          },
+
+          { "Key": "Name",
+            "Value": { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName" }, "VPC" ] ] }
+          }
+
+        ]
+      }
+    },
+
+    "PublicSubnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Ref": "PublicSubnetCIDR"
+        },
+        "Tags": [
+          { "Key": "Name",
+            "Value": { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName" }, "PubSub1" ] ] }
+          }
+        ],
+        "AvailabilityZone": {
+          "Ref": "AZ"
+        }
+      }
+    },
+
+    "InternetGateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName" }, "IGW" ] ] }
+          }
+        ]
+      }
+    },
+
+    "AttachGateway": {
+      "DependsOn": "InternetGateway",
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "InternetGatewayId": {
+          "Ref": "InternetGateway"
+        }
+      }
+    },
+
+    "PublicSubnetRouteTable": {
+      "DependsOn": "AttachGateway",
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName" }, "PubSubRouteTab" ] ] }
+          }
+        ]
+      }
+    },
+
+    "PublicRoute1": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "AttachGateway",
+        "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicSubnetRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InternetGateway"
+        }
+      }
+    },
+
+    "PublicSubnet1RouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnet1"
+        },
+        "RouteTableId": {
+          "Ref": "PublicSubnetRouteTable"
+        }
+      }
+    },
+
+    "SDSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "SD Access Rules",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "icmp",
+            "FromPort": "-1",
+            "ToPort": "-1",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": {
+              "Ref": "RemoteAccessCIDR"
+            }
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "8100",
+            "ToPort": "8100",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "8101",
+            "ToPort": "8101",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "9070",
+            "ToPort": "9070",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName" }, "SD", "SG" ] ] }
+          }
+        ]
+      }
+    },
+
+    "SD1": {
+      "Type": "AWS::EC2::Instance",
+
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "configSets" : {
+            "default" : [ "CreateFiles", "RunCommands" ]
+          },
+
+           "CreateFiles": {
+            "files" : {
+              "/root/bsd-package.deb": {
+                "source": { "Fn::FindInMap": [ "SDLink", { "Ref": "SDVers" }, "URL" ] },
+                "mode": "000644",
+                "owner": "root"
+              },
+              "/root/.sd-config.sh": {
+                "content": { "Fn::Join": [ "", [
+                  "#!/bin/bash\n",
+                  "db_host=", { "Ref": "DBHost" }, "\n", 
+                  "db_user=", { "Ref": "DBUser" }, "\n", 
+                  "db_pass=", { "Ref": "DBPass" }, "\n", 
+                  "db_name=", { "Ref": "DBName" }, "\n", 
+                  "rest_user=", { "Ref": "RestUser" }, "\n", 
+                  "rest_pass=", { "Ref": "RestPass" }, "\n", 
+                  "alert_email=", { "Ref": "AlertEmail" }, "\n", 
+                  "licenses=", { "Fn::Join": [ ",", {"Ref": "Licenses"} ]}, "\n",
+                  "cert=", { "Fn::Join": [ "\\n", { "Ref": "SSLPublicKey" }]}, "\n",
+                  "key=", { "Fn::Join": [ "\\n", { "Ref": "SSLPrivateKey" }]}, "\n"
+                ]]},
+                "mode": "000755",
+                "owner": "root"
+              }
+            }
+          },
+
+          "RunCommands" : {
+            "commands" : {
+
+              "01-dev_mode_accept" : {
+                "command" : "echo \"developer_mode_accepted     yes\" >> /opt/zeus/zxtm/global.cfg"
+              },
+
+              "02-enable_rest_api" : {
+                "command" : "echo \"rest!enabled     Yes\" >> /opt/zeus/zxtm/conf/settings.cfg"
+              },
+
+              "03-enable_autofailover_1" : {
+                "command" : "sed -i -e \"/flipper.autofailback/d\" /opt/zeus/zxtm/conf/settings.cfg"
+              },
+
+              "04-enable_autofailover_2" : {
+                "command" : "echo \"flipper!autofailback     Yes\" >> /opt/zeus/zxtm/conf/settings.cfg"
+              },
+              "99-wait_3_mins_then_signal_that_we_are_done" : {
+                "command" : { "Fn::Join" : ["", [
+                  "sleep 180 && /usr/local/bin/cfn-signal -s true '",
+                  { "Ref" : "WaitHandle01" },
+                  "'"
+                ]]}
+              }
+            }
+          }
+        }
+      },
+
+      "DependsOn": "AttachGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName" }, "SD1" ] ] }
+          }
+        ],
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "UserData" : { "Fn::Base64" : { "Fn::Join" : ["", [
+          "#!/bin/bash -xe\n",
+          "apt-get update -y\n",
+          "apt-get install python-pip -y\n",
+          "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+          "apt-get install awscli -y\n",
+          "apt-get install jq -y\n",
+          "/usr/local/bin/cfn-init -v ",
+          "         --stack ", { "Ref" : "AWS::StackName" },
+          "         --resource SD1",
+          "         --region ", { "Ref" : "AWS::Region" }, "\n"
+        ]]}},
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "SourceDestCheck": "false",
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": "true",
+            "DeleteOnTermination": "true",
+            "DeviceIndex": "0",
+            "SubnetId": {
+              "Ref": "PublicSubnet1"
+            },
+            "GroupSet": [
+              {
+                "Ref": "SDSecurityGroup"
+              }
+            ]
+          }
+        ],
+        "ImageId": {
+          "Fn::FindInMap": [
+            "UbuntuAMI",
+            { "Ref": "AWS::Region" },
+            "AMI"
+          ]
+        }
+      }
+    },
+
+    "SD1RecoveryAlarm": {
+      "DependsOn": "SD1",
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "EC2 Autorecovery for SD1. Autorecover if we fail EC2 status checks for 15 minutes.",
+        "Namespace": "AWS/EC2",
+        "MetricName": "StatusCheckFailed_System",
+        "Statistic": "Minimum",
+        "Period": "60",
+        "EvaluationPeriods": "15",
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Threshold": "0",
+        "AlarmActions": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:aws:automate:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":ec2:recover"
+              ]
+            ]
+          }
+        ],
+        "Dimensions": [
+          {
+            "Name": "InstanceId",
+            "Value": {
+              "Ref": "SD1"
+            }
+          }
+        ]
+      }
+    },
+
+    "WaitHandle01": {
+        "Type": "AWS::CloudFormation::WaitConditionHandle",
+        "Properties": {}
+    },
+
+    "WaitCondition01": {
+        "Type": "AWS::CloudFormation::WaitCondition",
+        "DependsOn": "SD1",
+        "Properties": {
+            "Handle": {
+                "Ref": "WaitHandle01"
+            },
+            "Timeout": "600"
+        }
+    }
+  },
+
+  "Outputs": {
+    "SD1PubIP": {
+      "Description": "SD Public IP",
+      "Value": {
+          "Fn::GetAtt": [ "SD1", "PublicIp" ]
+      }
+    }
+  }
+}
