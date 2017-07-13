@@ -1,19 +1,29 @@
 #!/bin/bash -xe
 
 # Default Params
-db_host=localhost
-db_port=3306
-db_name=ssc
-db_user=ssc
-db_pass=Password123
-bsd_host=$(hostname -f)
-bsd_port=8100
-bsd_license_port=8101
-alert_email=root@localhost
-alert_server=localhost
-sources=/var/cache/ssc
-logs=/var/logs/ssc
-usercfg=/root/.sd-config.sh
+db_host="localhost"
+db_port="3306"
+db_name="ssc"
+db_user="ssc"
+db_pass="Password123"
+sd_host=$(hostname -f)
+sd_vers="17.2"
+sd_port="8100"
+sd_license_port="8101"
+alert_email="root@localhost"
+alert_server="localhost"
+sources="/var/cache/ssc"
+logs="/var/logs/ssc"
+usercfg="/root/.sd-config.sh"
+
+# Drop license files into the licenses folder add_licenses <SDVers> <csv>
+add_licenses() {
+    IFS=, lics=( $2 )
+    for (( i=0; i<${#lics[@]} ; i++ ))
+    do
+        echo "${lics[i]}" > /opt/riverbed_ssc_$1/licenses/lic_${i}.txt
+    done
+}
 
 # Load user configuration. Exit if they don't exist
 if [ -f $usercfg ]
@@ -59,9 +69,9 @@ cat <<-EOF | debconf-set-selections
     riverbed-ssc ssc/db/name string $db_name
     riverbed-ssc ssc/db/user string $db_user
     riverbed-ssc ssc/db/password password $db_pass
-    riverbed-ssc ssc/server/name string $bsd_host
-    riverbed-ssc ssc/server/port string $bsd_port
-    riverbed-ssc ssc/server/license_port string $bsd_license_port
+    riverbed-ssc ssc/server/name string $sd_host
+    riverbed-ssc ssc/server/port string $sd_port
+    riverbed-ssc ssc/server/license_port string $sd_license_port
     riverbed-ssc ssc/server/cert_file string $certfile
     riverbed-ssc ssc/server/key_file string $keyfile
     riverbed-ssc ssc/server/numthreads string 20
@@ -75,5 +85,12 @@ cat <<-EOF | debconf-set-selections
     riverbed-ssc ssc/alerts/smtp_port string 25
 EOF
 
-#DEBIAN_FRONTEND=noninteractive dpkg -i /root/sd-package.deb
+DEBIAN_FRONTEND=noninteractive dpkg -i /root/sd-package.deb
 
+# Install SD Licenses
+add_licenses "$sd_vers" "$license"
+
+# Setup database
+
+# Start ssc
+#service ssc start
