@@ -102,7 +102,7 @@ cat <<-EOF | expect
     expect encryption:
     send "$sd_enc_key\n"
     expect password:
-    send "$sd_enc_key!\n"
+    send "$sd_enc_key\n"
     expect :
     send "y\n"
     expect eof
