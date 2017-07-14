@@ -91,7 +91,22 @@ DEBIAN_FRONTEND=noninteractive dpkg -i /root/sd-package.deb
 add_licenses "$sd_vers" "$licenses"
 
 # * Set up your database:
-#/opt/riverbed_ssc_17.2/bin/configure_ssc --liveconfigonly
+cat <<-EOF | expect
+    spawn /opt/riverbed_ssc_17.2/bin/configure_ssc --liveconfigonly
+    expect user:
+    send "$rest_user\n"
+    expect user:
+    send "$rest_pass\n"
+    expect password:
+    send "$rest_pass\n"
+    expect encryption:
+    send "$sd_enc_key\n"
+    expect password:
+    send "$sd_enc_key!\n"
+    expect :
+    send "y\n"
+    expect eof
+EOF
 
 # * Start the daemon:
 #start ssc
