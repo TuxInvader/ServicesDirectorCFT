@@ -49,7 +49,7 @@
 
   "Parameters": {
     "InstanceType": {
-      "Description": "Please select an EC2 instance type",
+      "Description": "Please select an EC2 instance type.",
       "Type": "String",
       "Default": "t2.small",
       "AllowedValues": [
@@ -61,28 +61,28 @@
     },
 
     "SDVers" : {
-      "Description" : "Please select SD version:",
+      "Description" : "Please select SD version.",
       "Type" : "String",
       "Default" : "17.2",
       "AllowedValues" : [
         "17.2"
       ],
-      "ConstraintDescription" : "Must be a valid SD version"
+      "ConstraintDescription" : "Must be a valid SD version."
     },
 
     "SDUseNat" : {
-      "Description" : "Enable NAT for this service director?:",
+      "Description" : "Enable NAT for this service director?",
       "Type" : "String",
       "Default" : "YES",
       "AllowedValues" : [
         "YES",
         "NO"
       ],
-      "ConstraintDescription" : "Must be set to YES or NO"
+      "ConstraintDescription" : "Must be set to YES or NO."
     },
 
     "SDEncKey": {
-      "Description" : "Password for the SD Encryption Key. Must be atleast 8 characters containing upper and lower case letters, numbers and symbols",
+      "Description" : "Password for the SD Encryption Key. Must be atleast 8 characters containing upper and lower case letters, numbers and symbols.",
       "Type"        : "String",
       "MinLength"   : "6",
       "MaxLength"   : "32",
@@ -100,7 +100,7 @@
     },
 
     "RestUser": {
-      "Description" : "The SD REST User. Must be 4 to 15 characters",
+      "Description" : "The SD REST User. Must be 4 to 15 characters.",
       "Type"        : "String",
       "MinLength"   : "4",
       "MaxLength"   : "15",
@@ -108,7 +108,7 @@
     },
 
     "RestPass": {
-      "Description" : "Password for the SD REST user. Must be 6 to 32 characters containing letters, numbers and symbols",
+      "Description" : "Password for the SD REST user. Must be 6 to 32 characters containing letters, numbers and symbols.",
       "Type"        : "String",
       "MinLength"   : "6",
       "MaxLength"   : "32",
@@ -118,7 +118,7 @@
     },
 
     "RemoteAccessCIDR": {
-      "Description": "Allowed source IP address range for SSH access into BSD",
+      "Description": "Allowed source IP address range for SSH access into BSD.",
       "Type": "String",
       "MinLength": "9",
       "MaxLength": "18",
@@ -136,7 +136,7 @@
     },
 
     "AZ": {
-      "Description": "List of Availability Zones for deployment.",
+      "Description": "Availability Zone for deployment.",
       "Type": "AWS::EC2::AvailabilityZone::Name",
       "ConstraintDescription": "Please select an AZ from a drop-down list."
     },
@@ -193,13 +193,13 @@
     },
 
     "AlertEmail": {
-      "Description": "An email address for alerts",
+      "Description": "An email address for alerts.",
       "Type": "String",
       "Default": "root@localhost"
     },
 
     "AlertServer": {
-      "Description": "SMTP email server for alerts",
+      "Description": "SMTP email server for alerts.",
       "Type": "String",
       "Default": "localhost"
     }
