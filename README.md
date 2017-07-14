@@ -37,8 +37,11 @@ When the stack is built the public IP address will be returned, and it's ready f
 | AlertServer | SMTP server for email | localhost |
 | RemoteAccessCIDR | IP range for restricting SSH access | 0.0.0.0/0 |
 
-If you leave the `DBHost` set to `localhost`, then the template will install a Mysql server for you.
-If you leave the `AlertServer` set to `localhost`, then the template will install postfix for you.
+* If you leave the `DBHost` set to `localhost`, then the template will install a Mysql server for you.
+* If you leave the `AlertServer` set to `localhost`, then the template will install postfix for you.
+* You _must_ provide licenses in the `Licenses` parameter. Include the controller license, and any bandwidth or add-ons you may have.
+* You _must_ select an `AZ` 
+* You _must_ provide `KeyName` if you want to be able to ssh to the instance.
 
 ## TODO
 
