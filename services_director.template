@@ -15,7 +15,7 @@
         },
         {
           "Label" : { "default" : "Services Director Configuration" },
-          "Parameters" : [ "SDVers", "SDEncKey", "RestUser", "RestPass", "SSLPublicKey", "SSLPrivateKey", "DBHost", "DBUser", "DBPass", "DBName", "Licenses", "AlertEmail", "AlertServer" ]
+          "Parameters" : [ "SDVers", "SDEncKey", "SDUseNat", "RestUser", "RestPass", "SSLPublicKey", "SSLPrivateKey", "DBHost", "DBUser", "DBPass", "DBName", "Licenses", "AlertEmail", "AlertServer" ]
         },
         {
           "Label" : { "default" : "Security Configuration" },
@@ -30,6 +30,7 @@
         "KeyName" : { "default" : "SSH Key Name:" },
         "SDVers" : { "default" : "Services Director Version:" },
         "SDEncKey" : { "default" : "SD Encryption Key:" },
+        "SDUseNat" : { "default" : "SD NAT Setting:" },
         "RestUser" : { "default" : "SD REST Username:" },
         "RestPass" : { "default" : "SD REST Password:" },
         "SSLPublicKey" : { "default" : "SSL Public Key:" },
@@ -67,6 +68,17 @@
         "17.2"
       ],
       "ConstraintDescription" : "Must be a valid SD version"
+    },
+
+    "SDUseNat" : {
+      "Description" : "Enable NAT for this service director?:",
+      "Type" : "String",
+      "Default" : "YES",
+      "AllowedValues" : [
+        "YES",
+        "NO"
+      ],
+      "ConstraintDescription" : "Must be set to YES or NO"
     },
 
     "SDEncKey": {
@@ -413,6 +425,7 @@
                   "db_name='", { "Ref": "DBName" }, "'\n",
                   "sd_vers='", { "Ref": "SDVers" }, "'\n",
                   "sd_enc_key='", { "Ref": "SDEncKey" }, "'\n",
+                  "sd_use_nat='", { "Ref": "SDUseNat" }, "'\n",
                   "rest_user='", { "Ref": "RestUser" }, "'\n",
                   "rest_pass='", { "Ref": "RestPass" }, "'\n",
                   "alert_email='", { "Ref": "AlertEmail" }, "'\n",

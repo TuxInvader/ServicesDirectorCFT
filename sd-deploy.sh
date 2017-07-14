@@ -8,6 +8,8 @@ db_user="ssc"
 db_pass="Password123"
 sd_host=$(hostname -f)
 sd_pub=$(ec2metadata --public-hostname 2>/dev/null)
+sd_pub_ipv4=$(ec2metadata --public-ipv4)
+sd_use_nat="YES"
 sd_vers="17.2"
 sd_port="8100"
 sd_license_port="8101"
@@ -186,8 +188,13 @@ cat <<EOF | expect
     }
 EOF
 
-# * Start the daemon:
+# Start the daemon:
 start ssc
 
-
+# Setup the NAT (external_ip)
+if [ "$sd_use_nat" == "YES" ]
+then
+    sleep 5
+    curl -k -d "{\"external_ip\":\"${sd_pub_ipv4}\"}" -H "Content-Type: application/json" -u "${rest_user}:${rest_pass}" https://localhost:8100/api/tmcm/2.5/manager/${sd_host}
+fi
 
