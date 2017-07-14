@@ -31,7 +31,8 @@ setup_mysql() {
     echo "mysql-server-5.6 mysql-server/root_password_again password $1" | debconf-set-selections
     apt-get install -y mysql-server-5.6
     echo -e "[mysqld]\nquery_cache_type=1\n" > /etc/mysql/conf.d/ssc.cnf
-    restart mysql-server
+    stop mysql-server
+    start mysql-server
     mysql -uroot -p${sd_enc_key} -e "use $db_name"
     if [ $? != 0 ]
     then
@@ -133,6 +134,7 @@ cat <<EOF | expect
     expect :
     send "y\n"
     expect eof
+    sleep 2
 EOF
 
 # * Start the daemon:
