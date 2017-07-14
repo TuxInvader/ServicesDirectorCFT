@@ -1,4 +1,4 @@
-#!/bin/bash -xe
+#!/bin/bash -x
 
 # Default Params
 db_host="localhost"
@@ -13,7 +13,7 @@ sd_license_port="8101"
 alert_email="root@localhost"
 alert_server="localhost"
 sources="/var/cache/ssc"
-logs="/var/logs/ssc"
+logs="/var/log/ssc"
 usercfg="/root/.sd-config.sh"
 
 # Drop license files into the licenses folder add_licenses <SDVers> <csv>
@@ -25,6 +25,22 @@ add_licenses() {
     done
 }
 
+# setup for local mysql
+setup_mysql() {
+    echo "mysql-server-5.6 mysql-server/root_password password $1" | debconf-set-selections
+    echo "mysql-server-5.6 mysql-server/root_password_again password $1" | debconf-set-selections
+    apt-get install -y mysql-server-5.6
+    echo -e "[mysqld]\nquery_cache_type=1\n" > /etc/mysql/conf.d/ssc.cnf
+    restart mysql-server
+    mysql -uroot -p${sd_enc_key} -e "use $db_name"
+    if [ $? != 0 ]
+    then
+        mysql -uroot -p${sd_enc_key} -e "create database $db_name"
+        mysql -uroot -p${sd_enc_key} -e "grant all on ssc.* to $db_user@'localhost' identified by '$db_pass'"
+        mysql -uroot -p${sd_enc_key} -e "flush privileges"
+    fi
+}
+
 # Load user configuration. Exit if they don't exist
 if [ -f $usercfg ]
 then
@@ -34,10 +50,8 @@ else
     exit 1
 fi
 
-certfile=${sources}/cert.pem
-keyfile=${sources}/key.pem
-mkdir -p $sources
-mkdir -p $logs
+certfile=/etc/ssl/certs/ssc-cert.pem
+keyfile=/etc/ssl/private/ssc-key.pem
 
 # Check we have certificates
 if [ -f "$certfile" -o -n "$cert" ]
@@ -91,7 +105,13 @@ DEBIAN_FRONTEND=noninteractive dpkg -i /root/sd-package.deb
 add_licenses "$sd_vers" "$licenses"
 
 # * Set up your database:
-cat <<-EOF | expect
+if [ "$db_host" == "localhost" ]
+then
+    setup_mysql $sd_enc_key
+fi
+
+# Run live config
+cat <<EOF | expect
     spawn /opt/riverbed_ssc_17.2/bin/configure_ssc --liveconfigonly
     expect user:
     send "$rest_user\n"
@@ -101,8 +121,15 @@ cat <<-EOF | expect
     send "$rest_pass\n"
     expect encryption:
     send "$sd_enc_key\n"
-    expect password:
-    send "$sd_enc_key\n"
+    expect {
+        password: {
+            send "$sd_enc_key\n"
+        }
+        encryption: {
+            send_user "\n\nERROR - Password too weak!\n"
+            exit 1
+        }
+    }
     expect :
     send "y\n"
     expect eof
@@ -110,5 +137,6 @@ EOF
 
 # * Start the daemon:
 #start ssc
+
 
 
