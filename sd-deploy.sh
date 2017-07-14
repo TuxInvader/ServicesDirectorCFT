@@ -138,7 +138,7 @@ cat <<EOF | expect
 EOF
 
 # * Start the daemon:
-#start ssc
+start ssc
 
 
 
