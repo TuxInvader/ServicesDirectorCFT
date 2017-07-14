@@ -7,6 +7,7 @@ db_name="ssc"
 db_user="ssc"
 db_pass="Password123"
 sd_host=$(hostname -f)
+sd_pub=$(ec2metadata --public-hostname 2>/dev/null)
 sd_vers="17.2"
 sd_port="8100"
 sd_license_port="8101"
@@ -30,7 +31,7 @@ setup_mysql() {
     echo "mysql-server-5.6 mysql-server/root_password password $1" | debconf-set-selections
     echo "mysql-server-5.6 mysql-server/root_password_again password $1" | debconf-set-selections
     echo -e "[mysqld]\nquery_cache_type=1\n" > /etc/mysql/conf.d/ssc.cnf
-    apt-get install -y mysql-server-5.6
+    DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server-5.6
     mysql -uroot -p${sd_enc_key} -e "use $db_name"
     if [ $? != 0 ]
     then
@@ -38,6 +39,27 @@ setup_mysql() {
         mysql -uroot -p${sd_enc_key} -e "grant all on ssc.* to $db_user@'localhost' identified by '$db_pass'"
         mysql -uroot -p${sd_enc_key} -e "flush privileges"
     fi
+}
+
+# setup for local email
+setup_postfix() {
+    sd_host=$1
+    sd_pub=$2
+    echo "postfix postfix/destinations string  $sd_host, $sd_pub, localhost" | debconf-set-selections
+    echo "postfix postfix/mailname    string  $sd_pub" | debconf-set-selections
+    echo "postfix postfix/main_mailer_type    select  Internet Site" | debconf-set-selections
+    echo "postfix postfix/protocols   select  all" | debconf-set-selections
+    echo "postfix postfix/recipient_delim string  +" | debconf-set-selections
+    echo "postfix postfix/mailbox_limit   string  0" | debconf-set-selections
+    echo "postfix postfix/procmail    boolean false" | debconf-set-selections
+    echo "postfix postfix/chattr  boolean false" | debconf-set-selections
+    echo "postfix postfix/rfc1035_violation   boolean false" | debconf-set-selections
+    echo "postfix postfix/mynetworks  string  127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128" | debconf-set-selections
+    DEBIAN_FRONTEND=noninteractive apt-get install -y postfix
+    echo "canonical_maps = hash:/etc/postfix/sender.alias" >> /etc/postfix/main.cf
+    echo "root  root@$sd_pub" > /etc/postfix/sender.alias
+    postmap hash:/etc/postfix/sender.alias
+    /etc/init.d/postfix reload
 }
 
 # Load user configuration. Exit if they don't exist
@@ -100,13 +122,19 @@ EOF
 
 DEBIAN_FRONTEND=noninteractive dpkg -i /root/sd-package.deb
 
-# * Add your Services Controller license file(s)
+# Add your Services Controller license file(s)
 add_licenses "$sd_vers" "$licenses"
 
-# * Set up your database:
+# Set up your database:
 if [ "$db_host" == "localhost" ]
 then
-    setup_mysql $sd_enc_key
+    setup_mysql "$sd_enc_key"
+fi
+
+# Set up your email:
+if [ "$alert_server" == "localhost" ]
+then
+    setup_postfix "$sd_host" "$sd_pub"
 fi
 
 # Run live config
@@ -118,30 +146,42 @@ cat <<EOF | expect
     send "$rest_pass\n"
     expect password:
     send "$rest_pass\n"
-    expect encryption:
-    send "$sd_enc_key\n"
     expect {
-        password: {
-            send "$sd_enc_key\n"
-        }
         encryption: {
-            send_user "\nERROR - Password too weak!\n"
-            exit 1
+            send "$sd_enc_key\n" 
+            expect {
+                password: {
+                    send "$sd_enc_key\n"
+                    expect :
+                    send "y\n"
+                }
+                encryption: {
+                    send_user "\nERROR - Password too weak!\n"
+                    exit 1
+                }
+            }
+            exp_continue
         }
-    }
-    expect :
-    send "y\n"
-    expect {
-        problem {
-            send_user "\nERROR - Failed to setup database!\n"
-            exit 1
+        Checking {
+            exp_continue
+        }
+        Operations {
+            exp_continue
+        }
+        Running {
+            exp_continue
         }
         Applying {
             exp_continue
         }
+        problem {
+            send_user "\nERROR - Failed to setup database!\n"
+            exit 1
+        }
         completed {
             send_user "\nLive Config Complete!\n"
             sleep 5
+            exit 0
         }
     }
 EOF
