@@ -29,10 +29,8 @@ add_licenses() {
 setup_mysql() {
     echo "mysql-server-5.6 mysql-server/root_password password $1" | debconf-set-selections
     echo "mysql-server-5.6 mysql-server/root_password_again password $1" | debconf-set-selections
-    apt-get install -y mysql-server-5.6
     echo -e "[mysqld]\nquery_cache_type=1\n" > /etc/mysql/conf.d/ssc.cnf
-    stop mysql-server
-    start mysql-server
+    apt-get install -y mysql-server-5.6
     mysql -uroot -p${sd_enc_key} -e "use $db_name"
     if [ $? != 0 ]
     then
@@ -127,14 +125,25 @@ cat <<EOF | expect
             send "$sd_enc_key\n"
         }
         encryption: {
-            send_user "\n\nERROR - Password too weak!\n"
+            send_user "\nERROR - Password too weak!\n"
             exit 1
         }
     }
     expect :
     send "y\n"
-    expect eof
-    sleep 2
+    expect {
+        problem {
+            send_user "\nERROR - Failed to setup database!\n"
+            exit 1
+        }
+        Applying {
+            exp_continue
+        }
+        completed {
+            send_user "\nLive Config Complete!\n"
+            sleep 5
+        }
+    }
 EOF
 
 # * Start the daemon:
