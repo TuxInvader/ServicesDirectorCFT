@@ -84,6 +84,7 @@ setup_storage() {
     mkdir -p /data/ssc/logs
     mkdir -p /data/ssc/cache
     mkdir -p /data/mysql
+    mkdir -p /var/lib/mysql
     mkdir $logs
     mkdir $sources
     mount -o bind /data/ssc/logs $logs
