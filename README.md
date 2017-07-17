@@ -69,9 +69,7 @@ You will need to provide the following additional settings to make use of persis
 | DataVolume      | The Volume ID of the EBS Volume to attach | - |
 | AccessKey | The Access Key ID for calling the AWS API | - |
 | SecretAccessKey | The Secret Access Key for the above | - |
+| RemoveManagers | Should existing managers be removed from the database | YES |
 
 
-## TODO
-
-* Support mounting persistent storage on var so that the database/logs can be persistent.
 

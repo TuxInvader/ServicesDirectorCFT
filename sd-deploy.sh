@@ -264,7 +264,6 @@ fi
 # Remove previous SSC instances from managers table
 if [ -n "$data_volume" -a "$sd_remove_managers" == "YES" ]
 then
-    #mysql -u "$db_user" -p"$db_pass" -h "$db_host" "$db_name" -e "delete from inventory_manager where host_name != '${sd_host}'"
     remove_old_managers "$rest_user" "$rest_pass" "$sd_host"
 fi
 
