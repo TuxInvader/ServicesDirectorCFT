@@ -486,17 +486,9 @@
 
           "RunCommands" : {
             "commands" : {
-
               "01-sd-deploy" : {
                 "command" : "/root/sd-deploy.sh"
-              },
-
-              "99-wait_1_min_then_signal_that_we_are_done" : {
-                "command" : { "Fn::Join" : ["", [
-                  "sleep 60 && /usr/local/bin/cfn-signal -s true '",
-                  { "Ref" : "WaitHandle01" },
-                  "'"
-                ]]}
+              }
               }
             }
           }

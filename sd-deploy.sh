@@ -20,6 +20,11 @@ sources="/var/cache/ssc"
 logs="/var/log/ssc"
 usercfg="/root/.sd-config.sh"
 
+# cfn signal
+finished() {
+    /usr/local/bin/cfn-signal -s $1 -r "$2"
+}
+
 # Drop license files into the licenses folder add_licenses <SDVers> <csv>
 add_licenses() {
     IFS=, lics=( $2 )
@@ -78,7 +83,7 @@ setup_storage() {
     mount /dev/xvdb1 /data
     if [ $? != 0 ]
     then
-        echo "ERROR - Persistent Storage Mount Failed" >&2
+        finished false "ERROR - Persistent Storage Mount Failed" >&2
         exit 1
     fi
     mkdir -p /data/ssc/logs
@@ -97,7 +102,7 @@ if [ -f $usercfg ]
 then
     source /root/.sd-config.sh
 else
-    echo "ERROR - No Configuration found" >&2
+    finished false "ERROR - No Configuration found" >&2
     exit 1
 fi
 
@@ -112,7 +117,7 @@ then
         echo -e "$cert" > $certfile
     fi
 else
-    echo "ERROR - No Certificate found in config or on disk" >&2
+    finished false "ERROR - No Certificate found in config or on disk" >&2
     exit 1
 fi
 
@@ -124,7 +129,7 @@ then
         echo -e "$key" > $keyfile
     fi
 else
-    echo "ERROR - No Private Key found in config or on disk" >&2
+    finished false "ERROR - No Private Key found in config or on disk" >&2
     exit 1
 fi
 
@@ -137,7 +142,7 @@ then
         sleep 5
         setup_storage $logs $sources
     else
-        echo "ERROR - Persistent Storage Attach Failed" >&2
+        finished false "ERROR - Persistent Storage Attach Failed" >&2
         exit 1
     fi
 fi
@@ -240,3 +245,4 @@ then
     curl -k -d "{\"external_ip\":\"${sd_pub_ipv4}\"}" -H "Content-Type: application/json" -u "${rest_user}:${rest_pass}" https://localhost:8100/api/tmcm/2.5/manager/${sd_host}
 fi
 
+finished true "Complete"
