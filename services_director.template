@@ -115,10 +115,8 @@
     },
 
     "AccessKey": {
-      "Type": "AWS::IAM::AccessKey",
+      "Type": "String",
       "Default": "",
-      "MinLength"   : "20",
-      "MaxLength"   : "20",
       "AllowedPattern" : "[A-Z0-9]*",
       "Description": "The EC2 Access Key to use for attaching the volume.",
       "ConstraintDescription": "EC2 Access Key ID."
@@ -127,8 +125,7 @@
     "SecretAccessKey": {
       "Type": "String",
       "Default": "",
-      "MinLength"   : "40",
-      "MaxLength"   : "40",
+      "NoEcho"         : "true",
       "AllowedPattern" : "[-_ +a-zA-Z0-9]*",
       "Description": "The Secret Access Key for the above Key.",
       "ConstraintDescription": "EC2 Secret Access Key."
@@ -457,7 +454,10 @@
                   "aws_secret_access_key = ", { "Ref": "SecretAccessKey" }, "\n",
                   "aws_access_key_id = ", { "Ref": "AccessKey" }, "\n",
                   "region = ", { "Ref" : "AWS::Region" }, "\n",
-                  "output = json\n"
+                  "output = text\n"
+              ]]},
+                "mode": "000644",
+                "owner": "root"
               },
               "/root/.sd-config.sh": {
                 "content": { "Fn::Join": [ "", [

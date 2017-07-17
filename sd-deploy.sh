@@ -133,6 +133,7 @@ then
     aws ec2 attach-volume --volume-id $data_volume --instance-id $sd_instance_id --device xvdb
     if [ $? == 0 ]
     then
+        sleep 5
         setup_storage $logs $sources
     else
         echo "ERROR - Persistent Storage Attach Failed" >&2
