@@ -11,6 +11,7 @@ sd_pub=$(ec2metadata --public-hostname 2>/dev/null)
 sd_instance_id=$(ec2metadata --instance-id)
 sd_pub_ipv4=$(ec2metadata --public-ipv4)
 sd_use_nat="YES"
+sd_remove_managers="YES"
 sd_vers="17.2"
 sd_port="8100"
 sd_license_port="8101"
@@ -95,6 +96,16 @@ setup_storage() {
     mount -o bind /data/ssc/logs $logs
     mount -o bind /data/ssc/cache $sources
     mount -o bind /data/mysql /var/lib/mysql
+}
+
+remove_old_managers() {
+    rest_user=$1
+    rest_pass=$2
+    sd_host=$3
+    for manager in $(curl -s -k -u "${rest_user}:${rest_pass}" https://localhost:8100/api/tmcm/2.5/manager | jq ".children | select(.[].name != '${sd_host}') | .[].href'"
+    do 
+        curl -s -k -u "${rest_user}:${rest_pass}" -X delete https://localhost:8100$manager
+    done
 }
 
 # Load user configuration. Exit if they don't exist
@@ -242,12 +253,20 @@ master="/opt/riverbed_ssc_${sd_vers}/etc/master"
 
 # Start the daemon:
 start ssc
+sleep 5
 
 # Setup the NAT (external_ip)
 if [ "$sd_use_nat" == "YES" ]
 then
-    sleep 5
     curl -k -d "{\"external_ip\":\"${sd_pub_ipv4}\"}" -H "Content-Type: application/json" -u "${rest_user}:${rest_pass}" https://localhost:8100/api/tmcm/2.5/manager/${sd_host}
 fi
 
+# Remove previous SSC instances from managers table
+if [ -n "$data_volume" -a "$sd_remove_managers" == "YES" ]
+then
+    #mysql -u "$db_user" -p"$db_pass" -h "$db_host" "$db_name" -e "delete from inventory_manager where host_name != '${sd_host}'"
+    remove_old_managers "$rest_user" "$rest_pass" "$sd_host"
+fi
+
 finished true "Complete" $wait_handle
+

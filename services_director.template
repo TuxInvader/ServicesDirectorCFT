@@ -15,7 +15,7 @@
         },
         {
           "Label" : { "default" : "Host Persistent Storage (optional)" },
-          "Parameters" : [ "DataVolume", "AccessKey", "SecretAccessKey" ]
+          "Parameters" : [ "DataVolume", "AccessKey", "SecretAccessKey", "RemoveManagers" ]
         },
         {
           "Label" : { "default" : "Services Director Configuration" },
@@ -35,6 +35,7 @@
         "DataVolume" : { "default" : "EC2 Volume:" },
         "AccessKey" : { "default" : "EC2 Access Key ID:" },
         "SecretAccessKey" : { "default" : "EC2 Secret Access Key:" },
+        "RemoveManagers" : { "default" : "Remove old instances:" },
         "SDVers" : { "default" : "Services Director Version:" },
         "SDEncKey" : { "default" : "SD Encryption Key:" },
         "SDUseNat" : { "default" : "SD NAT Setting:" },
@@ -131,6 +132,17 @@
       "ConstraintDescription": "EC2 Secret Access Key."
     },
  
+    "RemoveManagers" : {
+      "Description" : "Remove old SSC Managers from database?",
+      "Type" : "String",
+      "Default" : "YES",
+      "AllowedValues" : [
+        "YES",
+        "NO"
+      ],
+      "ConstraintDescription" : "Must be set to YES or NO."
+    },
+
     "RestUser": {
       "Description" : "The SD REST User. Must be 4 to 15 characters.",
       "Type"        : "String",
@@ -470,6 +482,7 @@
                   "sd_vers='", { "Ref": "SDVers" }, "'\n",
                   "sd_enc_key='", { "Ref": "SDEncKey" }, "'\n",
                   "sd_use_nat='", { "Ref": "SDUseNat" }, "'\n",
+                  "sd_remove_managers='", { "Ref": "RemoveManagers" }, "'\n",
                   "rest_user='", { "Ref": "RestUser" }, "'\n",
                   "rest_pass='", { "Ref": "RestPass" }, "'\n",
                   "alert_email='", { "Ref": "AlertEmail" }, "'\n",
