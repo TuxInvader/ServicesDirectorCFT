@@ -22,7 +22,7 @@ usercfg="/root/.sd-config.sh"
 
 # cfn signal
 finished() {
-    /usr/local/bin/cfn-signal -s $1 -r "$2"
+    /usr/local/bin/cfn-signal -s $1 -r "$2" "$3"
 }
 
 # Drop license files into the licenses folder add_licenses <SDVers> <csv>
@@ -83,7 +83,7 @@ setup_storage() {
     mount /dev/xvdb1 /data
     if [ $? != 0 ]
     then
-        finished false "ERROR - Persistent Storage Mount Failed" >&2
+        finished false "ERROR - Persistent Storage Mount Failed" $wait_handle
         exit 1
     fi
     mkdir -p /data/ssc/logs
@@ -102,7 +102,7 @@ if [ -f $usercfg ]
 then
     source /root/.sd-config.sh
 else
-    finished false "ERROR - No Configuration found" >&2
+    finished false "ERROR - No Configuration found" $wait_handle
     exit 1
 fi
 
@@ -117,7 +117,7 @@ then
         echo -e "$cert" > $certfile
     fi
 else
-    finished false "ERROR - No Certificate found in config or on disk" >&2
+    finished false "ERROR - No Certificate found in config or on disk" $wait_handle
     exit 1
 fi
 
@@ -129,7 +129,7 @@ then
         echo -e "$key" > $keyfile
     fi
 else
-    finished false "ERROR - No Private Key found in config or on disk" >&2
+    finished false "ERROR - No Private Key found in config or on disk" $wait_handle
     exit 1
 fi
 
@@ -142,7 +142,7 @@ then
         sleep 5
         setup_storage $logs $sources
     else
-        finished false "ERROR - Persistent Storage Attach Failed" >&2
+        finished false "ERROR - Persistent Storage Attach Failed" $wait_handle
         exit 1
     fi
 fi
@@ -234,6 +234,7 @@ cat <<EOF | expect
         }
     }
 EOF
+[ $? != 0 ] && finished false "SSC Live-Config Failed" $wait_handle
 
 # Start the daemon:
 start ssc
@@ -245,4 +246,4 @@ then
     curl -k -d "{\"external_ip\":\"${sd_pub_ipv4}\"}" -H "Content-Type: application/json" -u "${rest_user}:${rest_pass}" https://localhost:8100/api/tmcm/2.5/manager/${sd_host}
 fi
 
-finished true "Complete"
+finished true "Complete" $wait_handle
