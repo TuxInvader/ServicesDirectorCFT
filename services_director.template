@@ -489,7 +489,6 @@
               "01-sd-deploy" : {
                 "command" : "/root/sd-deploy.sh"
               }
-              }
             }
           }
         }
