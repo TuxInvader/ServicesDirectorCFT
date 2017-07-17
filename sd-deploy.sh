@@ -8,6 +8,7 @@ db_user="ssc"
 db_pass="Password123"
 sd_host=$(hostname -f)
 sd_pub=$(ec2metadata --public-hostname 2>/dev/null)
+sd_instance_id=$(ec2metadata --instance-id)
 sd_pub_ipv4=$(ec2metadata --public-ipv4)
 sd_use_nat="YES"
 sd_vers="17.2"
@@ -64,6 +65,32 @@ setup_postfix() {
     /etc/init.d/postfix reload
 }
 
+# setup the persistent storage
+setup_storage() {
+    logs=$1
+    sources=$2
+    if [ ! -b /dev/xvdb1 ]
+    then
+        echo '0,,L' | sfdisk /dev/xvdb
+        mkfs.ext4 /dev/xvdb1
+    fi
+    mkdir /data
+    mount /dev/xvdb1 /data
+    if [ $? != 0 ]
+    then
+        echo "ERROR - Persistent Storage Mount Failed" >&2
+        exit 1
+    fi
+    mkdir -p /data/ssc/logs
+    mkdir -p /data/ssc/cache
+    mkdir -p /data/mysql
+    mkdir $logs
+    mkdir $sources
+    mount -o bind /data/ssc/logs $logs
+    mount -o bind /data/ssc/cache $sources
+    mount -o bind /data/mysql /var/lib/mysql
+}
+
 # Load user configuration. Exit if they don't exist
 if [ -f $usercfg ]
 then
@@ -98,6 +125,19 @@ then
 else
     echo "ERROR - No Private Key found in config or on disk" >&2
     exit 1
+fi
+
+# Check for persistent storage.
+if [ -n "$data_volume" ]
+then
+    aws ec2 attach-volume --volume-id $data_volume --instance-id $sd_instance_id --device xvdb
+    if [ $? == 0 ]
+    then
+        setup_storage $logs $sources
+    else
+        echo "ERROR - Persistent Storage Attach Failed" >&2
+        exit 1
+    fi
 fi
 
 cat <<-EOF | debconf-set-selections

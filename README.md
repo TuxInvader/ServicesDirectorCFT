@@ -43,6 +43,34 @@ When the stack is built the public IP address will be returned, and it's ready f
 * You _must_ select an `AZ` 
 * You _must_ provide `KeyName` if you want to be able to ssh to the instance.
 
+## Using Persistent Storage
+
+If you wish to use persistent storage so that the SD database, and metrics are maintained after the demise of the instance, then you need to provide an EBS Volume-ID, and access credentials for a user with permissions to attach/detach storage. See below on creating such a user.
+
+### Create a Policy/User
+
+* In the AWS console, create a new policy with the following permissions.
+
+|Effect|Action|Resource|
+|------|------|--------|
+|Allow | ec2:AttachVolume| * |
+|Allow | ec2:DetachVolume| * |
+
+* Then create a user with access type: _Programmatic Access_ and assign the above policy directly to the user. 
+
+* Make a note of the `Access Key ID` and the `Secret Access Key`, you will need to provide these when deploying the stack.
+
+### Deploying the stack with persistent storage
+
+You will need to provide the following additional settings to make use of persistent storage:
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| DataVolume      | The Volume ID of the EBS Volume to attach | - |
+| AccessKey | The Access Key ID for calling the AWS API | - |
+| SecretAccessKey | The Secret Access Key for the above | - |
+
+
 ## TODO
 
 * Support mounting persistent storage on var so that the database/logs can be persistent.

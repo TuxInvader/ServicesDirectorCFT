@@ -14,6 +14,10 @@
           "Parameters" : [ "InstanceType", "KeyName" ]
         },
         {
+          "Label" : { "default" : "Host Persistent Storage (optional)" },
+          "Parameters" : [ "DataVolume", "AccessKey", "SecretAccessKey" ]
+        },
+        {
           "Label" : { "default" : "Services Director Configuration" },
           "Parameters" : [ "SDVers", "SDEncKey", "SDUseNat", "RestUser", "RestPass", "SSLPublicKey", "SSLPrivateKey", "DBHost", "DBUser", "DBPass", "DBName", "Licenses", "AlertEmail", "AlertServer" ]
         },
@@ -28,6 +32,9 @@
         "PublicSubnetCIDR" : { "default" : "Public Subnet:" },
         "InstanceType" : { "default" : "SD instance type:" },
         "KeyName" : { "default" : "SSH Key Name:" },
+        "DataVolume" : { "default" : "EC2 Volume:" },
+        "AccessKey" : { "default" : "EC2 Access Key ID:" },
+        "SecretAccessKey" : { "default" : "EC2 Secret Access Key:" },
         "SDVers" : { "default" : "Services Director Version:" },
         "SDEncKey" : { "default" : "SD Encryption Key:" },
         "SDUseNat" : { "default" : "SD NAT Setting:" },
@@ -99,6 +106,34 @@
       "ConstraintDescription": "Must be the name of an existing EC2 KeyPair."
     },
 
+    "DataVolume": {
+      "Type": "String",
+      "Default": "",
+      "AllowedPattern" : "[-_ a-zA-Z0-9]*",
+      "Description": "Name of an existing EC2 Volume for persistant storage.",
+      "ConstraintDescription": "Must be the name of an existing EC2 Volume."
+    },
+
+    "AccessKey": {
+      "Type": "AWS::IAM::AccessKey",
+      "Default": "",
+      "MinLength"   : "20",
+      "MaxLength"   : "20",
+      "AllowedPattern" : "[A-Z0-9]*",
+      "Description": "The EC2 Access Key to use for attaching the volume.",
+      "ConstraintDescription": "EC2 Access Key ID."
+    },
+
+    "SecretAccessKey": {
+      "Type": "String",
+      "Default": "",
+      "MinLength"   : "40",
+      "MaxLength"   : "40",
+      "AllowedPattern" : "[-_ +a-zA-Z0-9]*",
+      "Description": "The Secret Access Key for the above Key.",
+      "ConstraintDescription": "EC2 Secret Access Key."
+    },
+ 
     "RestUser": {
       "Description" : "The SD REST User. Must be 4 to 15 characters.",
       "Type"        : "String",
@@ -416,9 +451,18 @@
                 "mode": "000755",
                 "owner": "root"
               },
+              "/root/.aws/config": {
+                "content": { "Fn::Join": [ "", [
+                  "[default]\n",
+                  "aws_secret_access_key = ", { "Ref": "SecretAccessKey" }, "\n",
+                  "aws_access_key_id = ", { "Ref": "AccessKey" }, "\n",
+                  "region = ", { "Ref" : "AWS::Region" }, "\n",
+                  "output = json\n"
+              },
               "/root/.sd-config.sh": {
                 "content": { "Fn::Join": [ "", [
                   "#!/bin/bash\n",
+                  "data_volume='", { "Ref": "DataVolume" }, "'\n",
                   "db_host='", { "Ref": "DBHost" }, "'\n",
                   "db_user='", { "Ref": "DBUser" }, "'\n",
                   "db_pass='", { "Ref": "DBPass" }, "'\n",
