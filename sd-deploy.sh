@@ -238,7 +238,7 @@ EOF
 
 # Provide the master password, the liveconfig doesn't ask if the DB exists.
 master="/opt/riverbed_ssc_${sd_vers}/etc/master"
-[ ! -f $master ] && echo "1:${sd_enc_key}" > $master
+[ ! -f $master ] && echo -n "1:${sd_enc_key}" > $master
 
 # Start the daemon:
 start ssc
