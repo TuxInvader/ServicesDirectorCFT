@@ -28,7 +28,7 @@ finished() {
 
 # Drop license files into the licenses folder add_licenses <SDVers> <csv>
 add_licenses() {
-    IFS=, lics=( $2 )
+    lics=( $( echo $2 | sed -e's/,/ /g') )
     for (( i=0; i<${#lics[@]} ; i++ ))
     do
         echo "${lics[i]}" > /opt/riverbed_ssc_$1/licenses/lic_${i}.txt
@@ -91,8 +91,8 @@ setup_storage() {
     mkdir -p /data/ssc/cache
     mkdir -p /data/mysql
     mkdir -p /var/lib/mysql
-    mkdir $logs
-    mkdir $sources
+    mkdir -p $logs
+    mkdir -p $sources
     mount -o bind /data/ssc/logs $logs
     mount -o bind /data/ssc/cache $sources
     mount -o bind /data/mysql /var/lib/mysql
@@ -102,7 +102,7 @@ remove_old_managers() {
     rest_user=$1
     rest_pass=$2
     sd_host=$3
-    for manager in $(curl -s -k -u "${rest_user}:${rest_pass}" https://localhost:8100/api/tmcm/2.5/manager | jq '.children' | jq ".[] | select(.name != \"${sd_host}\") | .href")
+    for manager in $(curl -s -k -u "${rest_user}:${rest_pass}" https://localhost:8100/api/tmcm/2.5/manager | jq '.children' | jq -c ".[] | select(.name != \"${sd_host}\") | .href" | sed -e's/"//g')
     do 
         curl -s -k -u "${rest_user}:${rest_pass}" -X delete "https://localhost:8100${manager}"
     done
