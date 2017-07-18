@@ -197,14 +197,6 @@ then
     setup_postfix "$sd_host" "$sd_pub"
 fi
 
-# Provide the master password, the liveconfig doesn't ask if the DB exists.
-etcd="/opt/riverbed_ssc_${sd_vers}/etc"
-if [ -d "$etcd" -a ! -f "${etcd}/master" ]
-then
-    ps -ef | grep ssc
-    echo -n "1:${sd_enc_key}" > "${etcd}/master"
-fi
-
 # Run live config
 cat <<EOF | expect
     spawn /opt/riverbed_ssc_17.2/bin/configure_ssc --liveconfigonly
@@ -263,6 +255,14 @@ fi
 # Start the daemon:
 start ssc
 sleep 5
+
+# Provide the master password, the liveconfig doesn't ask if the DB exists.
+master="/opt/riverbed_ssc_${sd_vers}/etc/master"
+if [ ! -f "$master" ]
+then
+    /opt/riverbed_ssc_${sd_vers}/bin/set_master_password "${sd_enc_key}"
+    echo -n "1:${sd_enc_key}" > "${etcd}/master"
+fi
 
 # Setup the NAT (external_ip)
 if [ "$sd_use_nat" == "YES" ]
