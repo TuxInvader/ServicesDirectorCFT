@@ -245,11 +245,21 @@ cat <<EOF | expect
         }
     }
 EOF
-[ $? != 0 ] && finished false "SSC Live-Config Failed" $wait_handle
+
+if [ $? != 0 ] 
+then
+    finished false "SSC Live-Config Failed" $wait_handle
+    exit 1
+fi
 
 # Provide the master password, the liveconfig doesn't ask if the DB exists.
 master="/opt/riverbed_ssc_${sd_vers}/etc/master"
-[ ! -f $master ] && echo -n "1:${sd_enc_key}" > $master
+if [ ! -f $master ]
+then
+    ps -ef | grep ssc
+    echo -n "1:${sd_enc_key}" > $master
+    sleep 2
+fi
 
 # Start the daemon:
 start ssc
