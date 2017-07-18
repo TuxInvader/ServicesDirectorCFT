@@ -15,11 +15,11 @@
         },
         {
           "Label" : { "default" : "Host Persistent Storage (optional)" },
-          "Parameters" : [ "DataVolume", "AccessKey", "SecretAccessKey", "RemoveManagers" ]
+          "Parameters" : [ "DataVolume", "AccessKey", "SecretAccessKey" ]
         },
         {
           "Label" : { "default" : "Services Director Configuration" },
-          "Parameters" : [ "SDVers", "SDEncKey", "SDUseNat", "RestUser", "RestPass", "SSLPublicKey", "SSLPrivateKey", "DBHost", "DBUser", "DBPass", "DBName", "Licenses", "AlertEmail", "AlertServer" ]
+          "Parameters" : [ "SDVers", "SDEncKey", "SDUseNat", "RestUser", "RestPass", "SSLPublicKey", "SSLPrivateKey", "DBHost", "DBUser", "DBPass", "DBName", "Licenses", "AlertEmail", "AlertServer", "RemoveManagers" ]
         },
         {
           "Label" : { "default" : "Security Configuration" },

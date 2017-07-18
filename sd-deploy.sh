@@ -261,8 +261,8 @@ then
     curl -k -d "{\"external_ip\":\"${sd_pub_ipv4}\"}" -H "Content-Type: application/json" -u "${rest_user}:${rest_pass}" https://localhost:8100/api/tmcm/2.5/manager/${sd_host}
 fi
 
-# Remove previous SSC instances from managers table
-if [ -n "$data_volume" -a "$sd_remove_managers" == "YES" ]
+# Remove previous SD instances from managers table
+if [ "$sd_remove_managers" == "YES" ]
 then
     remove_old_managers "$rest_user" "$rest_pass" "$sd_host"
 fi
