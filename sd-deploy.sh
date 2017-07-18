@@ -202,7 +202,7 @@ etcd="/opt/riverbed_ssc_${sd_vers}/etc"
 if [ -d "$etcd" -a ! -f "${etcd}/master" ]
 then
     ps -ef | grep ssc
-    echo -n "1:${sd_enc_key}" > $master
+    echo -n "1:${sd_enc_key}" > "${etcd}/master"
 fi
 
 # Run live config
