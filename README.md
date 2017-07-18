@@ -32,6 +32,7 @@ When the stack is built the public IP address will be returned, and it's ready f
 | DBUser | Mysql User | ssc |
 | DBPass | Mysql Password | Password123 |
 | DBName | Mysql DB Name | ssc |
+| RemoveManagers | Should existing managers be removed from the database | YES |
 | Licenses | CSV list of your license keys | - |
 | AlertEmail | Email for alerts | root@localhost |
 | AlertServer | SMTP server for email | localhost |
@@ -69,7 +70,6 @@ You will need to provide the following additional settings to make use of persis
 | DataVolume      | The Volume ID of the EBS Volume to attach | - |
 | AccessKey | The Access Key ID for calling the AWS API | - |
 | SecretAccessKey | The Secret Access Key for the above | - |
-| RemoveManagers | Should existing managers be removed from the database | YES |
 
 
 

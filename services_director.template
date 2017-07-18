@@ -19,7 +19,7 @@
         },
         {
           "Label" : { "default" : "Services Director Configuration" },
-          "Parameters" : [ "SDVers", "SDEncKey", "SDUseNat", "RestUser", "RestPass", "SSLPublicKey", "SSLPrivateKey", "DBHost", "DBUser", "DBPass", "DBName", "Licenses", "AlertEmail", "AlertServer", "RemoveManagers" ]
+          "Parameters" : [ "SDVers", "SDEncKey", "SDUseNat", "RestUser", "RestPass", "SSLPublicKey", "SSLPrivateKey", "DBHost", "DBUser", "DBPass", "DBName", "RemoveManagers", "Licenses", "AlertEmail", "AlertServer" ]
         },
         {
           "Label" : { "default" : "Security Configuration" },
