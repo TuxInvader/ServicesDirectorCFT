@@ -254,15 +254,17 @@ fi
 
 # Start the daemon:
 start ssc
-sleep 5
 
 # Provide the master password, the liveconfig doesn't ask if the DB exists.
 master="/opt/riverbed_ssc_${sd_vers}/etc/master"
 if [ ! -f "$master" ]
 then
     /opt/riverbed_ssc_${sd_vers}/bin/set_master_password "${sd_enc_key}"
-    echo -n "1:${sd_enc_key}" > "${etcd}/master"
+    echo -n "1:${sd_enc_key}" > "$master"
 fi
+
+# Give SD some time to settle
+sleep 5
 
 # Setup the NAT (external_ip)
 if [ "$sd_use_nat" == "YES" ]
