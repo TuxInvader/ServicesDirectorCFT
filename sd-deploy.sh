@@ -267,10 +267,9 @@ do
     wait=$(( $wait + 1 ))
     if [ $wait -gt 10 ]
     then
-        break
-        #finished false "SSC failed to start" $wait_handle
+        finished false "SSC failed to start" $wait_handle
     fi
-    sleep 2
+    sleep 3
 done
 
 # Setup the NAT (external_ip)
