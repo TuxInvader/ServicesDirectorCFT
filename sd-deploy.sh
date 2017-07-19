@@ -265,9 +265,10 @@ wait=0
 until $( ss -nl | grep "*:${sd_port} " >/dev/null)
 do
     wait=$(( $wait + 1 ))
-    if [ $wait > 10 ]
+    if [ $wait -gt 10 ]
     then
-        finished false "SSC failed to start" $wait_handle
+        break
+        #finished false "SSC failed to start" $wait_handle
     fi
     sleep 2
 done
