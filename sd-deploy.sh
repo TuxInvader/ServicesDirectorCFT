@@ -23,7 +23,9 @@ usercfg="/root/.sd-config.sh"
 
 # cfn signal
 finished() {
+    success=$1
     /usr/local/bin/cfn-signal -s $1 -r "$2" "$3"
+    $success && exit 0 || exit 1
 }
 
 # Drop license files into the licenses folder add_licenses <SDVers> <csv>
@@ -85,7 +87,6 @@ setup_storage() {
     if [ $? != 0 ]
     then
         finished false "ERROR - Persistent Storage Mount Failed" $wait_handle
-        exit 1
     fi
     mkdir -p /data/ssc/logs
     mkdir -p /data/ssc/cache
@@ -114,7 +115,6 @@ then
     source /root/.sd-config.sh
 else
     finished false "ERROR - No Configuration found" $wait_handle
-    exit 1
 fi
 
 certfile=/etc/ssl/certs/ssc-cert.pem
@@ -129,7 +129,6 @@ then
     fi
 else
     finished false "ERROR - No Certificate found in config or on disk" $wait_handle
-    exit 1
 fi
 
 # Check we have keys
@@ -141,7 +140,6 @@ then
     fi
 else
     finished false "ERROR - No Private Key found in config or on disk" $wait_handle
-    exit 1
 fi
 
 # Check for persistent storage.
@@ -154,7 +152,6 @@ then
         setup_storage $logs $sources
     else
         finished false "ERROR - Persistent Storage Attach Failed" $wait_handle
-        exit 1
     fi
 fi
 
@@ -249,22 +246,31 @@ EOF
 if [ $? != 0 ] 
 then
     finished false "SSC Live-Config Failed" $wait_handle
-    exit 1
 fi
 
 # Start the daemon:
 start ssc
 
-# Give SD some time to settle
-sleep 5
-
 # Provide the master password, the liveconfig doesn't ask if the DB exists.
 master="/opt/riverbed_ssc_${sd_vers}/etc/master"
 if [ ! -f "$master" ]
 then
+    sleep 2
     /opt/riverbed_ssc_${sd_vers}/bin/set_master_password "${sd_enc_key}"
     echo -n "1:${sd_enc_key}" > "$master"
 fi
+
+# Give SD some time to start
+wait=0
+until $( ss -nl | grep "*:${sd_port} " >/dev/null)
+do
+    wait=$(( $wait + 1 ))
+    if [ $wait > 10 ]
+    then
+        finished false "SSC failed to start" $wait_handle
+    fi
+    sleep 2
+done
 
 # Setup the NAT (external_ip)
 if [ "$sd_use_nat" == "YES" ]
