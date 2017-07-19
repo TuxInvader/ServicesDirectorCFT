@@ -281,6 +281,7 @@ fi
 # Remove previous SD instances from managers table
 if [ "$sd_remove_managers" == "YES" ]
 then
+    sleep 10
     remove_old_managers "$rest_user" "$rest_pass" "$sd_host"
 fi
 
