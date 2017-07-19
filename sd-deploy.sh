@@ -48,6 +48,7 @@ setup_mysql() {
         mysql -uroot -p${sd_enc_key} -e "grant all on ssc.* to $db_user@'localhost' identified by '$db_pass'"
         mysql -uroot -p${sd_enc_key} -e "flush privileges"
     fi
+    mysqldump -u root -p${sd_enc_key} $db_name > /root/ssc-boot.dump
 }
 
 # setup for local email
