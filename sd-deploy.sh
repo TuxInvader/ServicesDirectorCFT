@@ -48,7 +48,6 @@ setup_mysql() {
         mysql -uroot -p${sd_enc_key} -e "grant all on ssc.* to $db_user@'localhost' identified by '$db_pass'"
         mysql -uroot -p${sd_enc_key} -e "flush privileges"
     fi
-    mysqldump -u root -p${sd_enc_key} $db_name > /root/ssc-boot.dump
 }
 
 # setup for local email
@@ -253,19 +252,19 @@ then
     exit 1
 fi
 
-# Provide the master password, the liveconfig doesn't ask if the DB exists.
-master="/opt/riverbed_ssc_${sd_vers}/etc/master"
-if [ ! -f "$master" ]
-then
-    #/opt/riverbed_ssc_${sd_vers}/bin/set_master_password "${sd_enc_key}"
-    echo -n "1:${sd_enc_key}" > "$master"
-fi
-
 # Start the daemon:
 start ssc
 
 # Give SD some time to settle
 sleep 5
+
+# Provide the master password, the liveconfig doesn't ask if the DB exists.
+master="/opt/riverbed_ssc_${sd_vers}/etc/master"
+if [ ! -f "$master" ]
+then
+    /opt/riverbed_ssc_${sd_vers}/bin/set_master_password "${sd_enc_key}"
+    echo -n "1:${sd_enc_key}" > "$master"
+fi
 
 # Setup the NAT (external_ip)
 if [ "$sd_use_nat" == "YES" ]
