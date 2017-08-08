@@ -490,7 +490,7 @@
                   "licenses='", { "Fn::Join": [ ",", {"Ref": "Licenses"} ]}, "'\n",
                   "cert='", { "Fn::Join": [ "\\n", { "Ref": "SSLPublicKey" }]}, "'\n",
                   "key='", { "Fn::Join": [ "\\n", { "Ref": "SSLPrivateKey" }]}, "'\n",
-                  "wait_handle='", { "Ref": "WaitHandle01" }, "'\n",
+                  "wait_handle='", { "Ref": "WaitHandle01" }, "'\n"
                 ]]},
                 "mode": "000755",
                 "owner": "root"
