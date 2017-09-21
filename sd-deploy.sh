@@ -155,6 +155,7 @@ then
     fi
 fi
 
+# Set the debconf selections for the SD package
 cat <<-EOF | debconf-set-selections
     riverbed-ssc ssc/db/host string $db_host
     riverbed-ssc ssc/db/port string $db_port
@@ -175,6 +176,37 @@ cat <<-EOF | debconf-set-selections
     riverbed-ssc ssc/alerts/address string $alert_email
     riverbed-ssc ssc/alerts/smtp_host string $alert_server
     riverbed-ssc ssc/alerts/smtp_port string 25
+EOF
+
+# The installer will want to find a config file because of the set-selections above.
+mkdir -p /etc/ssc/
+cat <<-EOF > /etc/ssc/ssc_config.ini
+    [database]
+    host = $db_host
+    port = $db_port
+    database = $db_name
+    user = $db_user
+    password = $db_pass
+
+    [server]
+    name = $sd_host
+    port = $sd_port
+    license_port = $sd_license_port
+    cert_file = $certfile
+    key_file = $keyfile
+    threads = 20
+    action_threads = 5
+    monitor_threads = 20
+    metering_threads = 20
+
+    [files]
+    sources = $sources
+    logs = $logs
+
+    [alerts]
+    emails = $alert_email
+    smtp_host = $alert_server
+    smtp_port = 25
 EOF
 
 DEBIAN_FRONTEND=noninteractive dpkg -i /root/sd-package.deb
