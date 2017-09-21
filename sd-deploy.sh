@@ -1,4 +1,5 @@
 #!/bin/bash -x
+set -a
 
 # Default Params
 db_host="localhost"
@@ -120,6 +121,12 @@ fi
 certfile=/etc/ssl/certs/ssc-cert.pem
 keyfile=/etc/ssl/private/ssc-key.pem
 
+# Check hostname -f worked. It started failing on my VPC even with EnableDnsHostnames enabled????
+if [ -z "$sd_host" ]
+then
+    sd_host=$(hostname -A | head -1)
+fi
+
 # Check we have certificates
 if [ -f "$certfile" -o -n "$cert" ]
 then
@@ -180,34 +187,8 @@ EOF
 
 # The installer will want to find a config file because of the set-selections above.
 mkdir -p /etc/ssc/
-cat <<-EOF > /etc/ssc/ssc_config.ini
-    [database]
-    host = $db_host
-    port = $db_port
-    database = $db_name
-    user = $db_user
-    password = $db_pass
-
-    [server]
-    name = $sd_host
-    port = $sd_port
-    license_port = $sd_license_port
-    cert_file = $certfile
-    key_file = $keyfile
-    threads = 20
-    action_threads = 5
-    monitor_threads = 20
-    metering_threads = 20
-
-    [files]
-    sources = $sources
-    logs = $logs
-
-    [alerts]
-    emails = $alert_email
-    smtp_host = $alert_server
-    smtp_port = 25
-EOF
+config_ini="W2RhdGFiYXNlXQpob3N0ID0gJGRiX2hvc3QKcG9ydCA9ICRkYl9wb3J0CmRhdGFiYXNlID0gJGRiX25hbWUKdXNlciA9ICRkYl91c2VyCnBhc3N3b3JkID0gJGRiX3Bhc3MKCltzZXJ2ZXJdCm5hbWUgPSAkc2RfaG9zdApwb3J0ID0gJHNkX3BvcnQKbGljZW5zZV9wb3J0ID0gJHNkX2xpY2Vuc2VfcG9ydApjZXJ0X2ZpbGUgPSAkY2VydGZpbGUKa2V5X2ZpbGUgPSAka2V5ZmlsZQp0aHJlYWRzID0gMjAKYWN0aW9uX3RocmVhZHMgPSA1Cm1vbml0b3JfdGhyZWFkcyA9IDIwCm1ldGVyaW5nX3RocmVhZHMgPSAyMAoKW2ZpbGVzXQpzb3VyY2VzID0gJHNvdXJjZXMKbG9ncyA9ICRsb2dzCgpbYWxlcnRzXQplbWFpbHMgPSAkYWxlcnRfZW1haWwKc210cF9ob3N0ID0gJGFsZXJ0X3NlcnZlcgpzbXRwX3BvcnQgPSAyNQo="
+echo $config_ini | base64 -d | envsubst > /etc/ssc/ssc_config.ini
 
 DEBIAN_FRONTEND=noninteractive dpkg -i /root/sd-package.deb
 
