@@ -302,6 +302,20 @@
       }
     },
 
+    "DHCPOptions" : {
+      "Type": "AWS::EC2::DHCPOptions",
+      "Properties": {
+        "DomainName": {
+          "Fn::If": [
+            "US-East-1",
+            "ec2.internal",
+            { "Fn::Join": [ ".", [ { "Ref" : "AWS::Region" }, "compute.internal" ] ] }
+          ]
+        },
+        "DomainNameServers": [ "AmazonProvidedDNS" ]
+      }
+    },
+
     "PublicSubnet1": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
