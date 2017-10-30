@@ -316,6 +316,14 @@
       }
     },
 
+    "VPCDHCPOptionsAssociation" : {
+      "Type" : "AWS::EC2::VPCDHCPOptionsAssociation",
+      "Properties" : {
+        "VpcId" : {"Ref" : "VPC"},
+        "DhcpOptionsId" : {"Ref" : "DHCPOptions"}
+      }
+    },
+
     "PublicSubnet1": {
       "Type": "AWS::EC2::Subnet",
       "Properties": {
