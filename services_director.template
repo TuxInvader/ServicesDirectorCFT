@@ -15,7 +15,7 @@
         },
         {
           "Label" : { "default" : "Host Persistent Storage (optional)" },
-          "Parameters" : [ "DataVolume", "AccessKey", "SecretAccessKey" ]
+          "Parameters" : [ "AddDataVolume", "DataVolume", "EBSSnapshotId" ]
         },
         {
           "Label" : { "default" : "Services Director Configuration" },
@@ -33,8 +33,8 @@
         "InstanceType" : { "default" : "SD instance type:" },
         "KeyName" : { "default" : "SSH Key Name:" },
         "DataVolume" : { "default" : "EC2 Volume:" },
-        "AccessKey" : { "default" : "EC2 Access Key ID:" },
-        "SecretAccessKey" : { "default" : "EC2 Secret Access Key:" },
+        "EBSSnapshotId" : { "default" : "Snapshot ID:" },
+        "AddDataVolume" : { "default" : "Add Data Volume?" },
         "RemoveManagers" : { "default" : "Remove old instances:" },
         "SDVers" : { "default" : "Services Director Version:" },
         "SDEncKey" : { "default" : "SD Encryption Key:" },
@@ -111,25 +111,21 @@
       "Type": "String",
       "Default": "",
       "AllowedPattern" : "[-_ a-zA-Z0-9]*",
-      "Description": "Name of an existing EC2 Volume for persistant storage.",
+      "Description": "Name of an existing EC2 Volume for persistant storage, or blank to create a new volume.",
       "ConstraintDescription": "Must be the name of an existing EC2 Volume."
     },
 
-    "AccessKey": {
-      "Type": "String",
-      "Default": "",
-      "AllowedPattern" : "[A-Z0-9]*",
-      "Description": "The EC2 Access Key to use for attaching the volume.",
-      "ConstraintDescription": "EC2 Access Key ID."
+    "EBSSnapshotId":{
+      "Type":"String",
+      "Description":"SnapshotID to base the EBS volume on (or blank for new volume)",
+      "Default":""
     },
 
-    "SecretAccessKey": {
-      "Type": "String",
-      "Default": "",
-      "NoEcho"         : "true",
-      "AllowedPattern" : "[-_ +a-zA-Z0-9]*",
-      "Description": "The Secret Access Key for the above Key.",
-      "ConstraintDescription": "EC2 Secret Access Key."
+    "AddDataVolume":{
+      "Type":"String",
+      "Description":"Whether we need to add a Data Volume to the SD instance.",
+      "AllowedValues": ["No","Yes"],
+      "Default":"No"
     },
  
     "RemoveManagers" : {
@@ -276,7 +272,22 @@
   },
 
   "Conditions" : {
-    "US-East-1": { "Fn::Equals" : [{ "Ref" : "AWS::Region" }, "us-east-1"] }
+    "US-East-1": { "Fn::Equals" : [{ "Ref" : "AWS::Region" }, "us-east-1"] },
+
+    "UseSnapshotForEBS":{
+      "Fn::Not":[
+      {"Fn::Equals":[{"Ref":"EBSSnapshotId"},""]}
+      ]
+    },
+    "DeployEBS":{
+      "Fn::Equals":[{"Ref":"AddDataVolume"},"Yes"]
+    },
+    "CreateEBS":{
+      "Fn::And":[
+        {"Fn::Equals":[{"Ref":"DataVolume"},""]},
+        {"Condition":"DeployEBS"}
+        ]
+      }
   },
 
   "Resources": {
@@ -461,6 +472,22 @@
       }
     },
 
+    "EBSVolume":{
+      "Type":"AWS::EC2::Volume",
+      "DeletionPolicy" : "Snapshot",
+      "Condition":"CreateEBS",
+      "Properties":{
+        "AvailabilityZone":{"Ref" : "AZ" },
+        "Encrypted":"false",
+        "SnapshotId":{"Fn::If" : ["UseSnapshotForEBS", {"Ref":"EBSSnapshotId"},{"Ref":"AWS::NoValue"}]},
+        "Size":{"Fn::If" : ["UseSnapshotForEBS",{"Ref":"AWS::NoValue"},"50"]},
+        "Tags": [
+          {"Key" : "Name", "Value" : {"Fn::Join": [ "-", [{"Ref": "AWS::StackName"},"EBSVolume"]]} }
+        ],
+        "VolumeType":"gp2"
+      }
+    },
+
     "SD1": {
       "Type": "AWS::EC2::Instance",
 
@@ -478,25 +505,14 @@
                 "owner": "root"
               },
               "/root/sd-deploy.sh": {
-                "source": "https://raw.githubusercontent.com/TuxInvader/ServicesDirectorCFT/master/sd-deploy.sh",
+                "source": "https://raw.githubusercontent.com/dkalintsev/ServicesDirectorCFT/master/sd-deploy.sh",
                 "mode": "000755",
-                "owner": "root"
-              },
-              "/root/.aws/config": {
-                "content": { "Fn::Join": [ "", [
-                  "[default]\n",
-                  "aws_secret_access_key = ", { "Ref": "SecretAccessKey" }, "\n",
-                  "aws_access_key_id = ", { "Ref": "AccessKey" }, "\n",
-                  "region = ", { "Ref" : "AWS::Region" }, "\n",
-                  "output = text\n"
-              ]]},
-                "mode": "000644",
                 "owner": "root"
               },
               "/root/.sd-config.sh": {
                 "content": { "Fn::Join": [ "", [
                   "#!/bin/bash\n",
-                  "data_volume='", { "Ref": "DataVolume" }, "'\n",
+                  "add_data_volume='", { "Ref": "AddDataVolume" }, "'\n",
                   "db_host='", { "Ref": "DBHost" }, "'\n",
                   "db_user='", { "Ref": "DBUser" }, "'\n",
                   "db_pass='", { "Ref": "DBPass" }, "'\n",
@@ -557,7 +573,6 @@
         "KeyName": {
           "Ref": "KeyName"
         },
-        "SourceDestCheck": "false",
         "NetworkInterfaces": [
           {
             "AssociatePublicIpAddress": "true",
@@ -572,6 +587,15 @@
               }
             ]
           }
+        ],
+        "Volumes":[
+          {"Fn::If" : ["DeployEBS",
+            {
+              "Device":"/dev/xvdb",
+              "VolumeId": {"Fn::If": ["CreateEBS", {"Ref":"EBSVolume"}, {"Ref": "DataVolume"}]}
+            },
+            {"Ref":"AWS::NoValue"}
+          ]}
         ],
         "ImageId": {
           "Fn::FindInMap": [

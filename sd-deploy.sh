@@ -149,17 +149,17 @@ else
     finished false "ERROR - No Private Key found in config or on disk" $wait_handle
 fi
 
-# Check for persistent storage.
-if [ -n "$data_volume" ]
+# Check for persistent storage selection.
+if [ "$add_data_volume" == "Yes" ]
 then
-    aws ec2 attach-volume --volume-id $data_volume --instance-id $sd_instance_id --device xvdb
-    if [ $? == 0 ]
-    then
-        sleep 5
+    #aws ec2 attach-volume --volume-id $data_volume --instance-id $sd_instance_id --device xvdb
+    #if [ $? == 0 ]
+    #then
+    #    sleep 5
         setup_storage $logs $sources
-    else
-        finished false "ERROR - Persistent Storage Attach Failed" $wait_handle
-    fi
+    #else
+    #    finished false "ERROR - Persistent Storage Attach Failed" $wait_handle
+    #fi
 fi
 
 # Set the debconf selections for the SD package
@@ -187,8 +187,34 @@ EOF
 
 # The installer will want to find a config file because of the set-selections above.
 mkdir -p /etc/ssc/
-config_ini="W2RhdGFiYXNlXQpob3N0ID0gJGRiX2hvc3QKcG9ydCA9ICRkYl9wb3J0CmRhdGFiYXNlID0gJGRiX25hbWUKdXNlciA9ICRkYl91c2VyCnBhc3N3b3JkID0gJGRiX3Bhc3MKCltzZXJ2ZXJdCm5hbWUgPSAkc2RfaG9zdApwb3J0ID0gJHNkX3BvcnQKbGljZW5zZV9wb3J0ID0gJHNkX2xpY2Vuc2VfcG9ydApjZXJ0X2ZpbGUgPSAkY2VydGZpbGUKa2V5X2ZpbGUgPSAka2V5ZmlsZQp0aHJlYWRzID0gMjAKYWN0aW9uX3RocmVhZHMgPSA1Cm1vbml0b3JfdGhyZWFkcyA9IDIwCm1ldGVyaW5nX3RocmVhZHMgPSAyMAoKW2ZpbGVzXQpzb3VyY2VzID0gJHNvdXJjZXMKbG9ncyA9ICRsb2dzCgpbYWxlcnRzXQplbWFpbHMgPSAkYWxlcnRfZW1haWwKc210cF9ob3N0ID0gJGFsZXJ0X3NlcnZlcgpzbXRwX3BvcnQgPSAyNQo="
-echo $config_ini | base64 -d | envsubst > /etc/ssc/ssc_config.ini
+cat <<-EOF | sed -e "s/^ [ ]*//g" | envsubst > /tmp/ssc_config.ini
+    [database]
+    host = $db_host
+    port = $db_port
+    database = $db_name
+    user = $db_user
+    password = $db_pass
+
+    [server]
+    name = $sd_host
+    port = $sd_port
+    license_port = $sd_license_port
+    cert_file = $certfile
+    key_file = $keyfile
+    threads = 20
+    action_threads = 5
+    monitor_threads = 20
+    metering_threads = 20
+
+    [files]
+    sources = $sources
+    logs = $logs
+
+    [alerts]
+    emails = $alert_email
+    smtp_host = $alert_server
+    smtp_port = 25
+EOF
 
 DEBIAN_FRONTEND=noninteractive dpkg -i /root/sd-package.deb
 
