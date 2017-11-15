@@ -15,7 +15,7 @@
         },
         {
           "Label" : { "default" : "Host Persistent Storage (optional)" },
-          "Parameters" : [ "AddDataVolume", "DataVolume", "EBSSnapshotId" ]
+          "Parameters" : [ "AddDataVolume", "VolumeSize", "DataVolume", "EBSSnapshotId" ]
         },
         {
           "Label" : { "default" : "Services Director Configuration" },
@@ -35,6 +35,7 @@
         "DataVolume" : { "default" : "EC2 Volume:" },
         "EBSSnapshotId" : { "default" : "Snapshot ID:" },
         "AddDataVolume" : { "default" : "Add Data Volume?" },
+        "VolumeSize" : { "default" : "Date Volume Size (GB):" },
         "RemoveManagers" : { "default" : "Remove old instances:" },
         "SDVers" : { "default" : "Services Director Version:" },
         "SDEncKey" : { "default" : "SD Encryption Key:" },
@@ -110,13 +111,14 @@
     "DataVolume": {
       "Type": "String",
       "Default": "",
-      "AllowedPattern" : "[-_ a-zA-Z0-9]*",
+      "AllowedPattern" : "[-0-9a-z]*",
       "Description": "Name of an existing EC2 Volume for persistant storage, or blank to create a new volume.",
       "ConstraintDescription": "Must be the name of an existing EC2 Volume."
     },
 
     "EBSSnapshotId":{
       "Type":"String",
+      "AllowedPattern" : "[-0-9a-z]*",
       "Description":"SnapshotID to base the EBS volume on (or blank for new volume)",
       "Default":""
     },
@@ -127,7 +129,15 @@
       "AllowedValues": ["No","Yes"],
       "Default":"No"
     },
- 
+
+    "VolumeSize" : {
+      "Default" : "5",
+      "Description" : "Size of Data Volume in GB, between 1 and 1000",
+      "Type" : "Number",
+      "MinValue" : "1",
+      "MaxValue" : "1000"
+    },
+
     "RemoveManagers" : {
       "Description" : "Remove old SSC Managers from database?",
       "Type" : "String",
@@ -480,7 +490,7 @@
         "AvailabilityZone":{"Ref" : "AZ" },
         "Encrypted":"false",
         "SnapshotId":{"Fn::If" : ["UseSnapshotForEBS", {"Ref":"EBSSnapshotId"},{"Ref":"AWS::NoValue"}]},
-        "Size":{"Fn::If" : ["UseSnapshotForEBS",{"Ref":"AWS::NoValue"},"50"]},
+        "Size":{"Fn::If" : ["UseSnapshotForEBS",{"Ref":"AWS::NoValue"},{"Ref":"VolumeSize"}]},
         "Tags": [
           {"Key" : "Name", "Value" : {"Fn::Join": [ "-", [{"Ref": "AWS::StackName"},"EBSVolume"]]} }
         ],
