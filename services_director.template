@@ -515,7 +515,7 @@
                 "owner": "root"
               },
               "/root/sd-deploy.sh": {
-                "source": "https://raw.githubusercontent.com/dkalintsev/ServicesDirectorCFT/master/sd-deploy.sh",
+                "source": "https://raw.githubusercontent.com/TuxInvader/ServicesDirectorCFT/master/sd-deploy.sh",
                 "mode": "000755",
                 "owner": "root"
               },
