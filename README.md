@@ -46,20 +46,14 @@ When the stack is built the public IP address will be returned, and it's ready f
 
 ## Using Persistent Storage
 
-If you wish to use persistent storage so that the SD database, and metrics are maintained after the demise of the instance, then you need to provide an EBS Volume-ID, and access credentials for a user with permissions to attach/detach storage. See below on creating such a user.
+If you wish to use persistent storage so that the SD database, and metrics are maintained after the demise of the instance, then you need to set Parameter `AddDataVolume` to `Yes` and optionally provide either an EBS Volume-ID of an existing volume or existing EBS Snapshot ID.
 
-### Create a Policy/User
+* If you provide an EBS Volume ID, template will attach this volume to the SD.
+* If you leave EBS Volume ID blank, template will create a new EBS Volume of the size you specify, and attach it to the SD.
+* If you provide the ID of an existing EBS Snapshot while leaving EBS Volume ID blank, template will create a new Volume from that snapshot.
+* If you specify both existing EBS Volume ID and a Snapshot ID, the Snapshot ID will be ignored.
 
-* In the AWS console, create a new policy with the following permissions.
-
-|Effect|Action|Resource|
-|------|------|--------|
-|Allow | ec2:AttachVolume| * |
-|Allow | ec2:DetachVolume| * |
-
-* Then create a user with access type: _Programmatic Access_ and assign the above policy directly to the user. 
-
-* Make a note of the `Access Key ID` and the `Secret Access Key`, you will need to provide these when deploying the stack.
+If you choose to create a persistent storage Volume and delete CloudFormation stack, a snapshot of this EBS Volume will be created before deletion. If you specify an existing Volume, it will not be deleted.
 
 ### Deploying the stack with persistent storage
 
@@ -67,9 +61,10 @@ You will need to provide the following additional settings to make use of persis
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| DataVolume      | The Volume ID of the EBS Volume to attach | - |
-| AccessKey | The Access Key ID for calling the AWS API | - |
-| SecretAccessKey | The Secret Access Key for the above | - |
+| AddDataVolume | Yes / No for whether to add Data Volume | No |
+| VolumeSize | Size in GB of the Volume to create, if DataVolume and EBSSnapshotId are blank | 5 |
+| DataVolume | The Volume ID of the EBS Volume to attach; blank means create new | - |
+| EBSSnapshotId | The Snapshot ID to create EBS Volume from | - |
 
 
 
